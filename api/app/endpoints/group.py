@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from app import models, schemas
 from app.database import get_db
+from app.schedules import run
 
 router = APIRouter()
 
@@ -37,4 +38,5 @@ async def update_group(
                 setattr(light, attr, value)
 
     db.commit()
+    run(disable=True)
     return group

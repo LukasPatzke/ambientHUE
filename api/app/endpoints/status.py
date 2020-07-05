@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from app import models, schemas
 from app.database import get_db
+from app.schedules import run
 
 router = APIRouter()
 
@@ -20,4 +21,5 @@ async def update_status(
     status = db.query(models.Status).first()
     status.status = status_in.status
     db.commit()
+    run(disable=True)
     return status

@@ -6,6 +6,9 @@ from app.database import get_db, SessionLocal, engine
 import requests
 import socket
 import time
+import logging
+
+log = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -17,7 +20,7 @@ async def get_bridge(
     return db.query(models.Bridge).first()
 
 
-@router.post('/', response_model=schemas.Bridge)
+@router.post('/', response_model=schemas.BridgeSync)
 async def create_bridge(
     bridge_in: schemas.BridgeCreate,
     db: Session = Depends(get_db)
@@ -27,14 +30,15 @@ async def create_bridge(
     while counter < 100:
         response = requests.post(
             f'http://{bridge_in.ipaddress}/api',
-            {'devicetype': f'hue_dimmer#{socket.gethostname()}'}
+            json={'devicetype': f'hue_dimmer#{socket.gethostname()}'}
         ).json()
-        if not response[0]['error']['type'] == 101:
+        log.info(response)
+        if response[0].get('success'):
             break
         time.sleep(1)
         counter += 1
 
-    if not response[0]['success']:
+    if not response[0].get('success'):
         raise HTTPException(
             status_code=500,
             detail=response
@@ -44,18 +48,20 @@ async def create_bridge(
     info = requests.get(
         f'http://{bridge_in.ipaddress}/api/{username}/config'
     ).json()
+    log.info(info)
     bridge = db.query(models.Bridge).first()
-    new_bridge = schemas.Bridge(
-        id=info.bridgeid,
-        name=info.name,
-        ipaddress=info.ipaddress,
+    new_bridge = models.Bridge(
+        id=info.get('bridgeid'),
+        name=info.get('name'),
+        ipaddress=info.get('ipaddress'),
         username=username
     )
     db.add(new_bridge)
-    db.delete(bridge)
+    if bridge:
+        db.delete(bridge)
     db.commit()
 
-    return new_bridge
+    return sync()
 
 
 @router.get('/discover', response_model=List[schemas.BridgeDiscovery])
@@ -63,7 +69,7 @@ async def discover_bridges() -> Any:
     return requests.get('https://discovery.meethue.com/').json()
 
 
-@router.get('/sync', response_model=List[schemas.BridgeSync])
+@router.get('/sync', response_model=schemas.BridgeSync)
 async def sync_with_bridge() -> Any:
     return sync()
 
@@ -82,11 +88,11 @@ def sync() -> schemas.BridgeSync:
         light = lights.get(int(light_id))
         if not light:
             bri_curve = (db.query(models.Curve)
-                           .filter_by(kind='ct')
+                           .filter_by(kind='bri')
                            .filter_by(default=True)
                            .first())
             ct_curve = (db.query(models.Curve)
-                        .filter_by(kind='bri')
+                        .filter_by(kind='ct')
                         .filter_by(default=True)
                         .first())
             light = models.Light(
@@ -109,14 +115,14 @@ def sync() -> schemas.BridgeSync:
     db.commit()
 
     for group_id, hue_group in hue_groups.items():
-        group = groups.get(group_id)
+        group = groups.get(int(group_id))
         if not group:
-            group = models.Group(id=group_id, position=models.Position())
+            group = models.Group(id=int(group_id), position=models.Position())
             db.add(group)
         group.name = hue_group['name']
         group.type = hue_group['type']
         group.lights = (
-            [db.query(models.Light).get(int(id)) for id in hue_group['lights']]
+            [db.query(models.Light).get(int(li)) for li in hue_group['lights']]
         )
 
     for group_id, group in groups.items():
@@ -125,10 +131,10 @@ def sync() -> schemas.BridgeSync:
     db.commit()
     db.close()
 
-    return schemas.BridgeSync(
-        lights=len(hue_lights),
-        groups=len(hue_groups)
-    )
+    return {
+        'lights': db.query(models.Light).count(),
+        'groups': db.query(models.Group).count()
+    }
 
 
 def hue_api() -> str:

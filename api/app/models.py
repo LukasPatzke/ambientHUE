@@ -77,7 +77,7 @@ class Light(Base):
     """ A single Light """
     __tablename__ = 'light'
 
-    id = Column(String, primary_key=True)
+    id = Column(Integer, primary_key=True)
     name = Column(String)
     type = Column(String)
     modelid = Column(String)
@@ -87,7 +87,7 @@ class Light(Base):
     on_controlled = Column(Boolean, default=False)
     on_threshold = Column(Float, default=0)
     bri_controlled = Column(Boolean, default=False)
-    bri_max = Column(Float, default=0)
+    bri_max = Column(Float, default=254)
     ct_controlled = Column(Boolean, default=False)
 
     bri_curve_id = Column(Integer, ForeignKey('curve.id'))
@@ -115,7 +115,7 @@ class Light(Base):
 class Group(Base):
     __tablename__ = 'group'
 
-    id = Column(String, primary_key=True)
+    id = Column(Integer, primary_key=True)
     name = Column(String)
     type = Column(String)
 

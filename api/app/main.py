@@ -1,5 +1,5 @@
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import RedirectResponse
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -37,35 +37,42 @@ def main():
     return RedirectResponse(url="/docs/")
 
 
-app.include_router(
+api_router = APIRouter()
+
+api_router.include_router(
     endpoints.status.router,
     prefix='/status',
     tags=['status']
 )
-app.include_router(
+api_router.include_router(
     endpoints.curve.router,
     prefix='/curves',
     tags=['curve']
 )
-app.include_router(
+api_router.include_router(
     endpoints.position.router,
     prefix='/positions',
     tags=['position']
 )
-app.include_router(
+api_router.include_router(
     endpoints.bridge.router,
     prefix='/bridge',
     tags=['bridge']
 )
-app.include_router(
+api_router.include_router(
     endpoints.light.router,
     prefix='/lights',
     tags=['lights']
 )
-app.include_router(
+api_router.include_router(
     endpoints.group.router,
     prefix='/groups',
     tags=['groups']
+)
+
+app.include_router(
+    api_router,
+    prefix='/api'
 )
 
 if __name__ == "__main__":

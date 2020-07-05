@@ -1,19 +1,23 @@
-from typing import Any, List, Optional
+from typing import Any, List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app import models, schemas
 from app.database import get_db
-from app.interpolate import monospline
-import datetime as dt
+from app.schedules import run, calc_curve_value
 
 router = APIRouter()
 
 
 @router.get('/', response_model=List[schemas.Curve])
 async def get_all_curves(
-  db: Session = Depends(get_db)
+    kind: str = None,
+    db: Session = Depends(get_db)
 ) -> Any:
-    return db.query(models.Curve).all()
+    if kind:
+        curves = db.query(models.Curve).filter_by(kind=kind).all()
+    else:
+        curves = db.query(models.Curve).all()
+    return curves
 
 
 @router.post('/', response_model=schemas.Curve)
@@ -27,8 +31,8 @@ async def create_curve(
         offset=curve_in.offset,
         default=False
     )
-    models.Point(x=0, y=150, first=True, curve=curve)
-    models.Point(x=1440, y=150, last=True, curve=curve)
+    models.Point(x=0, y=200, first=True, curve=curve)
+    models.Point(x=1440, y=200, last=True, curve=curve)
     db.add(curve)
     db.commit()
     return curve
@@ -45,14 +49,16 @@ async def get_curve(
 @router.put('/{id}', response_model=schemas.Curve)
 async def update_curve(
     id: int,
-    curve_in: schemas.CurveCreate,
+    curve_in: schemas.CurveUpdate,
     db: Session = Depends(get_db)
 ) -> Any:
     curve = db.query(models.Curve).get(id)
-    for attr, value in curve_in.items():
-        setattr(curve, attr, value)
+    for attr, value in curve_in.dict().items():
+        if value is not None:
+            setattr(curve, attr, value)
 
     db.commit()
+    run(disable=True)
     return curve
 
 
@@ -69,10 +75,11 @@ async def delete_curve(
         )
     db.delete(curve)
     db.commit()
+    run(disable=True)
     return curve
 
 
-@router.post('/{id}/{pointIndex}', response_model=schemas.Curve)
+@router.post('/{id}/{point_index}', response_model=schemas.Curve)
 async def insert_point(
     id: int,
     point_index: int,
@@ -115,10 +122,11 @@ async def insert_point(
     )
 
     db.commit()
+    run(disable=True)
     return db.query(models.Curve).get(id)
 
 
-@router.delete('/{id}/{pointIndex}', response_model=schemas.Curve)
+@router.delete('/{id}/{point_index}', response_model=schemas.Curve)
 async def delete_point(
     id: int,
     point_index: int,
@@ -144,10 +152,11 @@ async def delete_point(
         )
     db.delete(point)
     db.commit()
+    run(disable=True)
     return db.query(models.Curve).get(id)
 
 
-@router.put('/{id}/{pointIndex}', response_model=schemas.Curve)
+@router.put('/{id}/{point_index}', response_model=schemas.Curve)
 async def update_point(
     id: int,
     point_index: int,
@@ -166,34 +175,8 @@ async def update_point(
     point.y = point_in.y
 
     db.commit()
+    run(disable=True)
     return db.query(models.Curve).get(id)
-
-
-def calc_curve_value(
-    db: Session,
-    curve: schemas.Curve,
-    x: Optional[int] = None
-) -> int:
-    """ Calculate the value from the points"""
-    points = (db.query(models.Point)
-                .with_parent(curve)
-                .order_by(models.Point.x)
-                .all())
-
-    if x is None:
-        now = dt.datetime.now()
-        x = int((now - now.replace(hour=0,
-                                   minute=0,
-                                   second=0,
-                                   microsecond=0)).total_seconds() / 60) - 4*60
-
-    cs = monospline(
-        xs=[point.x for point in points],
-        ys=[point.y + curve.offset for point in points],
-    )
-
-    value = int(cs(x))
-    return value
 
 
 def calc_new_point_location(

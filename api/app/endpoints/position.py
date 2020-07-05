@@ -21,7 +21,7 @@ async def move_position(
     move: schemas.PositionMove,
     db: Session = Depends(get_db)
 ) -> Any:
-    positions = (db.query(models.Postion)
+    positions = (db.query(models.Position)
                    .order_by(models.Position.position)
                    .all())
 

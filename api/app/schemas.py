@@ -48,6 +48,11 @@ class CurveCreate(CurveBase):
     offset: float = 0
 
 
+class CurveUpdate(BaseModel):
+    name: Optional[str]
+    offset: Optional[float]
+
+
 class Curve(CurveBase):
     id: int
     default: bool
@@ -89,11 +94,25 @@ class Light(LightBase):
     on_threshold: float
     bri_controlled: bool
     bri_max: float
-    bri_curve_id: int
     ct_controlled: bool
-    ct_curve_id: int
     bri_curve: Curve
     ct_curve: Curve
+
+    class Config:
+        orm_mode = True
+
+
+class GroubBase(BaseModel):
+    id: int
+    name: str
+    type: str
+
+
+class GroupInfo(BaseModel):
+    id: int
+    name: str
+    type: str
+    lights: List[LightInfo]
 
     class Config:
         orm_mode = True
@@ -103,7 +122,7 @@ class Group(BaseModel):
     id: int
     name: str
     type: str
-    lights: List[LightInfo]
+    lights: List[Light]
 
     class Config:
         orm_mode = True
@@ -126,7 +145,7 @@ class PositionMove(BaseModel):
 class Position(PositionBase):
     id: int
     light: Optional[LightInfo]
-    group: Optional[Group]
+    group: Optional[GroupInfo]
 
     class Config:
         orm_mode = True

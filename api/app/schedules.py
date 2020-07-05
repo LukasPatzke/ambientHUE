@@ -1,11 +1,41 @@
-from app import models
+from typing import Optional
+from app import models, schemas
 from app.database import SessionLocal, engine
-from app.endpoints.curve import calc_curve_value
 from app.endpoints.bridge import hue_api
+from app.interpolate import monospline
+from sqlalchemy.orm import Session
+import datetime as dt
 import logging
 import requests
 
 log = logging.getLogger(__name__)
+
+
+def calc_curve_value(
+    db: Session,
+    curve: schemas.Curve,
+    x: Optional[int] = None
+) -> int:
+    """ Calculate the value from the points"""
+    points = (db.query(models.Point)
+                .with_parent(curve)
+                .order_by(models.Point.x)
+                .all())
+
+    if x is None:
+        now = dt.datetime.now()
+        x = int((now - now.replace(hour=0,
+                                   minute=0,
+                                   second=0,
+                                   microsecond=0)).total_seconds() / 60) - 4*60
+
+    cs = monospline(
+        xs=[point.x for point in points],
+        ys=[point.y + curve.offset for point in points],
+    )
+
+    value = int(cs(x))
+    return value
 
 
 def run(disable=False):
@@ -47,7 +77,7 @@ def run(disable=False):
                 )
                 log.debug('response: %s', response.json())
     else:
-        log.info('disabled')
+        log.debug('disabled')
         if disable:
             lights = db.query(models.Light).filter_by(on_controlled=True).all()
 
