@@ -1,0 +1,123 @@
+{
+    "common": {
+        "tabs": {
+            "home": "Home",
+            "lights": "Lights",
+            "groups": "Groups",
+            "curves": "Curves",
+            "settings": "Settings"
+        },
+        "charts": {
+            "colorTemp": "Color Temperature",
+            "brightness": "Brightness"
+        },
+        "actions": {
+            "delete": "Delete",
+            "addBefore": "Add before",
+            "addAfter": "Add after",
+            "done": "Done",
+            "cancel": "Cancel",
+            "reset": "Reset",
+            "update": "Update",
+            "edit": "Edit",
+            "hide": "Hide",
+            "add": "Add",
+            "next": "Next",
+            "back": "Back",
+            "reorder": "Reorder"
+        },
+        "settings": {
+            "status": "Status",
+            "offset": "Offset",
+            "enabled": "Enabled",
+            "disabled": "Disabled"
+        },
+        "serviceWorker": {
+            "initialized": "Page has been saved for offline use.",
+            "updated": "There is a new version available."
+        }
+    },
+    "lights": {
+        "title": "Lights",
+        "settings": {
+            "title": "Settings",
+            "status": "Manage On/Off",
+            "threshold": "On/Off Threshold",
+            "colorTemp": "Manage Color Temperature",
+            "brightness": "Manage Brightness",
+            "maxBrightness": "Max Brightness"
+        },
+        "info": {
+            "title": "Info",
+            "type": "Type",
+            "manufacturer": "Manufacturer",
+            "model": "Model"
+        }
+    },
+    "groups": {
+        "title": "Groups",
+        "rooms": "Rooms",
+        "zones": "Zones"
+    },
+    "curves": {
+        "title": "Curves",
+        "defaults": "Defaults",
+        "default_names": {
+            "ct": "Color Temperature",
+            "bri": "Brightness"
+        },
+        "offset": "Offset",
+        "descriptions": {
+            "offset": "Temporary offset to the curve, that will be reset over night."
+        },
+        "create": {
+            "title": "Add curve",
+            "name": "Curve name",
+            "type": "Curve type"
+        },
+        "delete": {
+            "title": "Confirm deletion",
+            "text": "Confirm deletion of curve {{name}}"
+        },
+        "rename": {
+            "title": "Rename"
+        }
+    },
+    "settings": {
+        "title": "Settings",
+        "reload": "Reload",
+        "language": "Language",
+        "languageOptions": {
+            "en": "English",
+            "de": "German"
+        },
+        "languageOptionsLocal": {
+            "en": "English",
+            "de": "Deutsch"
+        },
+        "server": {
+            "title": "Server",
+            "server": "Server",
+            "secure": "Secure Connection",
+            "port": "Port"
+        },
+        "init": {
+            "1": {
+                "title": "Setup your Hue Bridge",
+                "autoconfig": "Auto discovered bridges",
+                "manualconfig": "Manual configuration",
+                "ipaddress": "IP Address"
+            },
+            "2": {
+                "loading": "Press the button on top of your Hue Bridge",
+                "success": "Configuration successful",
+                "failure": "Error during configuration",
+                "found": "Found $t(settings:init.2.foundLights, {'count': {{lights}}}) und $t(settings:init.2.foundGroups, {'count': {{groups}}})",
+                "foundLights": "{{count}} light",
+                "foundLights_plural": "{{count}} lights",
+                "foundGroups": "{{count}} group",
+                "foundGroups_plural": "{{count}} groups"
+            }
+        }
+    }
+}

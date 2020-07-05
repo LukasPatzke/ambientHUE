@@ -1,0 +1,124 @@
+{
+    "common": {
+        "tabs": {
+            "home": "Start",
+            "lights": "Leuchten",
+            "groups": "Gruppen",
+            "curves": "Kurven",
+            "settings": "Einstellungen"
+        },
+        "charts": {
+            "colorTemp": "Farbtemperatur",
+            "brightness": "Helligkeit"
+        },
+        "actions": {
+            "delete": "Löschen",
+            "addBefore": "Hinzufügen vor",
+            "addAfter": "Hinzufügen nach",
+            "done": "Fertig",
+            "cancel": "Abbrechen",
+            "reset": "Zurücksetzen",
+            "update": "Aktualisieren",
+            "edit": "Bearbeiten",
+            "hide": "Verbergen",
+            "add": "Hinzufügen",
+            "next": "Weiter",
+            "back": "Zurück",
+            "reorder": "Anordnen"
+        },
+        "settings": {
+            "status": "Status",
+            "offset": "Offset",
+            "enabled": "Aktiv",
+            "disabled": "Inaktiv"
+        },
+        "serviceWorker": {
+            "initialized": "Die Seite ist für die offline Nutzung geladen.",
+            "updated": "Eine neue Version der Anwendung ist verfügbar"
+        }
+    },
+    "lights": {
+        "title": "Leuchten",
+        "settings": {
+            "title": "Einstellungen",
+            "status": "Ein/Aus steuern",
+            "threshold": "Ein/Aus Schwellwert",
+            "colorTemp": "Farbtemperatur steuern",
+            "brightness": "Helligkeit steuern",
+            "maxBrightness": "Maximale Helligkeit"
+        },
+        "info": {
+            "title": "Info",
+            "type": "Typ",
+            "manufacturer": "Hersteller",
+            "model": "Modell"
+        }
+    },
+    "groups": {
+        "title": "Gruppen",
+        "rooms": "Räume",
+        "zones": "Zonen"
+    },
+    "curves": {
+        "title": "Kurven",
+        "defaults": "Standard",
+        "default_names": {
+            "ct": "Farbtemperatur",
+            "bri": "Helligkeit"
+        },
+        "offset": "Versatz",
+        "descriptions": {
+            "offset": "Temporärer Versatz zur Kurve, der über Nacht zurückgesetzt wird."
+        },
+        "create": {
+            "title": "Kurve hinzufügen",
+            "name": "Kurvenname",
+            "type": "Kurventyp"
+        },
+        "delete": {
+            "title": "Löschen bestätigen",
+            "text": "Löschen der Kurve {{name}} bestätigen"
+        },
+        "rename": {
+            "title": "Umbenennen"
+        }
+    },
+    "settings": {
+        "title": "Einstellungen",
+        "reload": "Neu Laden",
+        "language": "Sprache",
+        "languageOptions": {
+            "en": "Englisch",
+            "de": "Deutsch"
+        },
+        "languageOptionsLocal": {
+            "en": "English",
+            "de": "Deutsch"
+        },
+        "server": {
+            "title": "Server",
+            "server": "Server",
+            "secure": "SSL verwenden",
+            "port": "Port"
+        },
+        "init": {
+            "1": {
+                "title": "Einrichtung der Hue Bridge",
+                "autoconfig": "Automatisch entdeckte Hue Bridges",
+                "manualconfig": "Manuelle Konfiguration",
+                "ipaddress": "IP Adresse"
+            },
+            "2": {
+                "loading": "Drücke den Knopf auf der Oberseite deiner Hue Bridge",
+                "success": "Einrichtung erfolgreich",
+                "failure": "Fehler bei der Einrichtung",
+                "found": "$t(settings:init.2.foundLights, {'count': {{lights}}}) und $t(settings:init.2.foundGroups, {'count': {{groups}}}) gefunden",
+                "foundLights": "{{count}} Lampe",
+                "foundLights_plural": "{{count}} Lampen",
+                "foundGroups": "{{count}} Gruppe",
+                "foundGroups_plural": "{{count}} Gruppen"
+            }
+            
+        }
+    }
+}
