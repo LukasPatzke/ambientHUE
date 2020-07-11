@@ -1,13 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import {  IonList, IonLabel, IonIcon, IonItem, IonToggle, IonNote, IonModal, IonHeader, IonToolbar, IonTitle, IonButtons, IonButton, IonBadge } from '@ionic/react';
+import {  IonList, IonLabel, IonIcon, IonItem, IonToggle, IonNote, IonModal, IonHeader, IonToolbar, IonTitle, IonButtons, IonButton, IonBadge, IonSlides, IonSlide, IonContent } from '@ionic/react';
 import { Range } from './Range';
 import { debounce } from 'lodash';
-import { ILight, ILightUpdate, ICurve } from '../types/hue';
-import { sunny, add, remove, checkmark } from 'ionicons/icons';
+import { ILight, ILightUpdate, ICurve, Curvekind } from '../types/hue';
+import { sunny, add, remove, checkmark, flashOff, chevronBack, create, addCircleOutline, addCircle } from 'ionicons/icons';
 import { isLightCtControlled, isLightBriControlled } from './LightList';
 import { Content } from './Content';
 import { useApi } from './useApi';
+import { ListDivider } from './ListDivider';
+import { CurveDetail } from 'src/pages/PageCurveDetail';
+import { CreateCurve } from '../pages/PageCurves';
 
 
 interface ILightCurveSettingsProps {
@@ -35,13 +38,13 @@ export const LightCurveSettings: React.FC<ILightCurveSettingsProps> = ({light, o
       {isLightBriControlled(light)?
       <IonItem button onClick={()=>setBriModalOpen(true)}>
         <IonLabel>{t('default_names.bri')}</IonLabel>
-        <IonNote>{light.bri_curve.name}</IonNote>
+        <IonNote slot='end'>{light.bri_curve?light.bri_curve.name:t('defaults')}</IonNote>
       </IonItem>
       :undefined}
       {isLightCtControlled(light)?
       <IonItem button onClick={()=>setCtModalOpen(true)}>
         <IonLabel>{t('default_names.ct')}</IonLabel>
-        <IonNote>{light.ct_curve.name}</IonNote>
+        <IonNote slot='end'>{light.ct_curve?light.ct_curve.name:t('defaults')}</IonNote>
       </IonItem>
       :undefined}
       <CurveSettings 
@@ -67,56 +70,151 @@ export const LightCurveSettings: React.FC<ILightCurveSettingsProps> = ({light, o
 
 interface ICurveSettingsProps {
   isOpen: boolean;
-  kind: 'bri'|'ct';
-  defaultValue: ICurve;
+  kind: Curvekind;
+  defaultValue?: ICurve;
   onClose: ()=>void;
   onSelect: (change: ILightUpdate) => void;
   pageRef?: HTMLElement;
 }
 
 const CurveSettings: React.FC<ICurveSettingsProps> = ({isOpen, kind, defaultValue, onClose, onSelect, pageRef}) => {
+  const slidesRef = useRef<HTMLIonSlidesElement>(null);
+  const modalRef = useRef<HTMLIonModalElement>(null);
+  
   const { t, i18n } = useTranslation(['common', 'curves']);
   const [curves, setCurves] = useState<ICurve[]>([]);
+  const [selected, setSelected] = useState<ICurve|undefined>(defaultValue)
+  const [isDetail, setDetail] = useState(false)
+  const [isCreate, setCreate] = useState(false)
 
   const { get } = useApi();
 
   useEffect(()=>{
+    update()
+  }, [isOpen, defaultValue])
+
+  useEffect(()=>{
+    if (!defaultValue) {
+      setSelected(curves.filter(c=>c.default)[1])
+    }
+  }, [defaultValue, curves, isOpen])
+
+  const update = () => (
     get({url: `/curves/?kind=${kind}`}).then(data=>{
       setCurves(data)
     })
-  }, [])
+  )
+
+  const handleSelect = () => {
+    if (kind==='bri') {
+      onSelect({bri_curve_id: selected?.id})
+    } else if (kind==='ct') {
+      onSelect({ct_curve_id: selected?.id})
+    }
+  }
+
+  const handleEdit = (curve: ICurve) => {
+    setSelected(curve)
+    setDetail(true)
+    next()
+  }
+
+  const handleBack = () => {
+    setDetail(false)
+    prev()
+  }
+
+  const next = () => {
+    slidesRef.current?.lockSwipeToNext(false);
+    slidesRef.current?.slideNext();
+    slidesRef.current?.lockSwipeToNext(true);
+    slidesRef.current?.lockSwipeToPrev(false);
+  }
+
+  const prev = () => {
+    slidesRef.current?.lockSwipeToPrev(false);
+    slidesRef.current?.slidePrev();
+    slidesRef.current?.lockSwipeToPrev(true);
+
+  }
 
   const curveItems = curves.map((curve, index)=>(
     <IonItem 
-      key={index} button detailIcon='none' 
-      onClick={()=>{
-        if (kind==='bri') {
-          onSelect({bri_curve_id: curve.id})
-        } else if (kind==='ct') {
-          onSelect({ct_curve_id: curve.id})
-        }
-      }}
+      key={index} button
+      onClick={()=>handleEdit(curve)}
     >
       <IonLabel>{curve.name}</IonLabel>
       {curve.default?<IonBadge color='medium'>default</IonBadge>:undefined}
-      {curve.id===defaultValue.id?<IonIcon slot='end' color='primary' icon={checkmark} />:undefined}
+      <IonIcon slot='end' color='primary' icon={curve.id === selected?.id?checkmark:undefined} />
     </IonItem>
   ))
   return (
-    <IonModal isOpen={isOpen} presentingElement={pageRef} swipeToClose onDidDismiss={onClose}>
+    <IonModal ref={modalRef} isOpen={isOpen} presentingElement={pageRef} swipeToClose onDidDismiss={onClose} >
       <IonHeader>
         <IonToolbar>
+          {isDetail?
+          <IonButtons slot='start'>
+            <IonButton onClick={handleBack}>
+              <IonIcon slot='start' icon={chevronBack} />
+              {t('common:actions.back')}
+            </IonButton>
+          </IonButtons>
+          :undefined}
           <IonTitle>{t('curves:title')}</IonTitle>
           <IonButtons slot='end'>
-            <IonButton onClick={onClose}>{t('common:actions.cancel')}</IonButton>
+            <IonButton onClick={handleSelect}>{t('common:actions.done')}</IonButton>
           </IonButtons>
         </IonToolbar>
       </IonHeader>
-      <Content>
-        <IonList lines='inset' >
-          {curveItems}
-        </IonList>
-      </Content>
+      <IonContent>
+      <IonSlides 
+        ref={slidesRef} 
+        options={{allowSlidePrev: false, allowSlideNext: false, initialSlide: 0}}
+        onIonSlideReachStart={()=>{slidesRef.current?.lockSwipeToPrev(true);setDetail(false)}}
+      >
+        <IonSlide>
+            <Content>
+            <ListDivider/>
+            <IonList lines='inset' >
+              {curveItems}
+            </IonList>
+            <ListDivider/>
+            <IonButton className='inset primary translucent' expand='block' onClick={()=>setCreate(true)}>
+              <IonIcon slot='start' icon={addCircle} color='primary'/>
+              <IonLabel color='primary'>{t('common:actions.add')}</IonLabel>
+            </IonButton>
+            </Content>
+        </IonSlide>
+        <IonSlide>
+          <Content>
+          {selected?
+            <CurveDetail 
+              id={selected.id} 
+              embedded 
+              embeddedRef={modalRef.current as HTMLElement}
+              onDelete={()=>update().then(()=>handleBack())}
+            />
+            :undefined}
+          </Content>
+        </IonSlide>
+      </IonSlides>
+      </IonContent>
+      <CreateCurve 
+        isOpen={isCreate} 
+        pageRef={modalRef.current as HTMLElement} 
+        fixedKind={kind}
+        onClose={(curve)=>{
+          if (curve) {
+            update().then(()=>{
+              setCreate(false)
+              handleEdit(curve)
+              
+            })
+          } else {
+            setCreate(false)
+          }
+        }}
+      />
     </IonModal>
   )
 }

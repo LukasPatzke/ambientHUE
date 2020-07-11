@@ -1,7 +1,9 @@
 import  React from 'react';
-import { IonList, IonItem, IonLabel, IonIcon } from '@ionic/react';
-import { bulb } from 'ionicons/icons';
-import { ILight, ILightInfo } from '../types/hue';
+import { IonList, IonItem, IonLabel, IonIcon, IonSkeletonText, IonAvatar, IonThumbnail, IonBadge } from '@ionic/react';
+import { bulb, square } from 'ionicons/icons';
+import { ILight, ILightInfo, IGroupInfo, IGroup } from '../types/hue';
+import Room from '../icons/room.svg';
+import Zone from '../icons/zone.svg';
 
 
 export const isLightHueControlled = (light: ILightInfo|ILight) => {
@@ -39,24 +41,79 @@ interface ILightListProps {
 }
 
 export const LightList: React.FC<ILightListProps> = ({lights}) => {
-  const icon = (light: ILightInfo) => {
-    if (isLightHueControlled(light)) {
-      return <IonIcon slot='start' icon={bulb} className='lp-icon-fill' style={{backgroundColor: 'var(--apple-system-purple)'}}/>
-    } else if (isLightCtControlled(light)) {
-      return <IonIcon slot='start' icon={bulb} className='lp-icon-fill' style={{backgroundColor: 'var(--apple-system-orange)'}}/>
-    } else {
-      return <IonIcon slot='start' icon={bulb} className='lp-icon-fill' style={{backgroundColor: 'var(--ion-color-dark)', color: 'var(--ion-color-light)'}}/>
-    }
-  }
   const items = lights.map((light, index) => (
     <IonItem routerLink={`/lights/${light.id}`} routerDirection='forward' key={index}>
-      {icon(light)}
+      <ItemIcon slot='start' item={light}/>
       <IonLabel>{light.name}</IonLabel>
     </IonItem>
   ))
   return (
     <IonList inset>
-      {items}
+      {items.length>0?items:<SkeletonItems/>}
     </IonList>
   )
+}
+
+
+
+interface IItemIcon {
+  item: ILight | ILightInfo | IGroup | IGroupInfo
+  slot?: string
+}
+
+export const ItemIcon: React.FC<IItemIcon> = ({item, ...props}) => {
+  let icon: string
+  let color: string
+
+  if (item.type === 'Room') {
+    icon = Room;
+    color = 'secondary'
+  } else 
+  if (item.type === 'Zone') {
+    icon = Zone;
+    color = 'primary'
+  } else if ((item.type === 'Color light') || (item.type === 'Extended color light')){
+    icon = bulb;
+    color = 'primary'
+  } else if (item.type === 'Color temperature light') {
+    icon = bulb;
+    color = 'secondary'
+  } else {
+    icon = bulb;
+    color = 'dark'
+  }
+
+  return (
+    <IonIcon 
+      icon={icon}
+      color={color}
+      {...props}
+    />
+  )
+}
+
+
+interface ISkeletonItemsProps {
+  count?: number
+}
+
+export const SkeletonItems: React.FC<ISkeletonItemsProps> = ({count=10}) => {
+  var i;
+  var items: any[] = []
+  for (i = 0; i < count; i++) {
+    items.push(
+      <IonItem key={i}>
+        <IonSkeletonText slot='start' animated style={{width: '20px', height: '20px'}}/>
+        <IonLabel>
+          <IonSkeletonText 
+            animated 
+            style={{
+              width: `${30 + (Math.random() * 70)}%`
+            }}
+          />
+        </IonLabel>
+      </IonItem>
+    )
+  }
+  return <>{items}</>
 }

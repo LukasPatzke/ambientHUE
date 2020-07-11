@@ -26,11 +26,16 @@
             "back": "Back",
             "reorder": "Reorder"
         },
+        "state": {
+            "loading": "Laden"
+        },
         "settings": {
             "status": "Status",
             "offset": "Offset",
             "enabled": "Enabled",
-            "disabled": "Disabled"
+            "disabled": "Disabled",
+            "on": "On",
+            "off": "Off"
         },
         "serviceWorker": {
             "initialized": "Page has been saved for offline use.",
@@ -41,6 +46,7 @@
         "title": "Lights",
         "settings": {
             "title": "Settings",
+            "on": "On/Off",
             "status": "Manage On/Off",
             "threshold": "On/Off Threshold",
             "colorTemp": "Manage Color Temperature",
@@ -62,6 +68,7 @@
     "curves": {
         "title": "Curves",
         "defaults": "Defaults",
+        "custom": "Custom",
         "default_names": {
             "ct": "Color Temperature",
             "bri": "Brightness"
@@ -73,7 +80,8 @@
         "create": {
             "title": "Add curve",
             "name": "Curve name",
-            "type": "Curve type"
+            "type": "Curve type",
+            "point_count": "Point count"
         },
         "delete": {
             "title": "Confirm deletion",
@@ -83,9 +91,24 @@
             "title": "Rename"
         }
     },
+    "webhooks": {
+        "title": "Webhooks",
+        "on": "Enabled",
+        "name": "Name",
+        "url": "URL",
+        "method": "Method",
+        "create": "Create Webhook",
+        "edit": "Edit Webhook",
+        "trigger": "Trigger",
+        "trigger_status": "State",
+        "trigger_lights": "Lights",
+        "trigger_groups": "Groups"
+    },
     "settings": {
         "title": "Settings",
         "reload": "Reload",
+        "smart_off": "Smart Off",
+        "smart_off_text": "Detects lights that where modified from another source and deactivates the automation temporarily.",
         "language": "Language",
         "languageOptions": {
             "en": "English",

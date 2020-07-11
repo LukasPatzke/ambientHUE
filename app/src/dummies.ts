@@ -20,6 +20,18 @@ export const curve: ICurve = {
   ]
 }
 
+export const briCurve: ICurve = {
+  ...curve,
+  kind: 'bri',
+  default: true
+}
+
+export const ctCurve: ICurve = {
+  ...curve,
+  kind: 'ct',
+  default: true
+}
+
 export const lightInfo: ILightInfo = {
   id: 0,
   name: 'Dummy',

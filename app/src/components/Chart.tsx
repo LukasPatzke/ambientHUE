@@ -1,4 +1,4 @@
-import { isPlatform } from '@ionic/react';
+import { isPlatform, IonPopover } from '@ionic/react';
 import moment from 'moment';
 import React, { useEffect, useState } from 'react';
 import { Scatter } from 'react-chartjs-2';
@@ -7,23 +7,9 @@ import { ActionSheet } from './ActionSheet';
 import { IPickerChange, Picker } from './Picker';
 import useLongPress from './useLongPress';
 import { IUseSwipe, useSwipe } from './useSwipe';
+import { truncate } from 'fs';
+import { ICurve, IPoint } from 'src/types/hue';
 
-
-interface IPoint {
-  x: number;
-  y: number;
-}
-
-type CurveKind = 'ct' | 'bri'
-
-export interface ICurve {
-  id: number
-  name: string
-  kind: CurveKind
-  default: boolean
-  offset: number
-  points: IPoint[]
-}
 
 export interface IChange {
   index: number;
@@ -74,6 +60,7 @@ export const Chart: React.FC<IChart> = ({curve, expanded, xScale={min:0, max:144
 
   useEffect(()=>{
     renderGradients()
+    chartReference.current?.chartInstance.canvas?.addEventListener('contextmenu', handleContextmenu, false)
   }, [chartReference.current])
 
   var yScale = {min:0, max:100};
@@ -81,6 +68,16 @@ export const Chart: React.FC<IChart> = ({curve, expanded, xScale={min:0, max:144
     yScale = {min:0, max:254}
   } else if (curve.kind==='ct') {
     yScale = {min:153, max: 500}
+  } else if (curve.kind==='hue') {
+    yScale = {min:0, max: 65280}
+  } else if (curve.kind==='sat') {
+    yScale = {min:25, max: 200}
+  } 
+
+  const handleContextmenu = (event: MouseEvent) => {
+    event.preventDefault()
+    event.stopPropagation();
+    setActionSheetOpen(true)
   }
 
   const renderGradients = () => {
@@ -109,6 +106,22 @@ export const Chart: React.FC<IChart> = ({curve, expanded, xScale={min:0, max:144
         gradientStops=[
           {offset: 0, red: 255, green: 149, blue: 43},
           {offset: 1, red: 235, green: 238, blue: 255}
+        ]
+      } else if (curve.kind==='hue') {
+        if (alpha<0.8) {alpha *= 0.8}
+        gradientStops=[
+          {offset: 0, red: 255, green: 0, blue: 0},
+          {offset: 1/6, red: 255, green: 165, blue: 0},
+          {offset: 2/6, red: 255, green: 255, blue: 0},
+          {offset: 3/6, red: 0, green: 128, blue: 0},
+          {offset: 4/6, red: 0, green: 0, blue: 255},
+          {offset: 5/6, red: 75, green: 0, blue: 135},
+          {offset: 1, red: 238, green: 130, blue: 238}
+        ]
+      } else if (curve.kind==='sat') {
+        gradientStops=[
+          {offset: 0, red: 0, green: 0, blue: 0},
+          {offset: 1, red: 255, green: 255, blue: 255},
         ]
       }
       
@@ -149,6 +162,7 @@ export const Chart: React.FC<IChart> = ({curve, expanded, xScale={min:0, max:144
   const datatsets: Chart.ChartDataSets[] = [{
     label: 'Scatter Dataset',
     pointRadius: 15,
+    pointHoverRadius: 20,
     cubicInterpolationMode: 'monotone',
     backgroundColor: gradients?.backgroundColor,
     pointBackgroundColor: gradients?.pointBackgroundColor,
@@ -192,6 +206,10 @@ export const Chart: React.FC<IChart> = ({curve, expanded, xScale={min:0, max:144
         itemIndex={activeElementIndex}
         dataLenght={curve.points.length}
         onCancel={()=>setActionSheetOpen(false)}
+        onEdit={()=>{
+          setActionSheetOpen(false)
+          setPickerOpen(true)
+        }}
         onDelete={itemIndex=>{
             onChange.delete(itemIndex)
             setActionSheetOpen(false);

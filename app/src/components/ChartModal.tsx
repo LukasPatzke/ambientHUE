@@ -36,7 +36,7 @@ export const ChartModal: React.FC<IChartModalProps> = ({isOpen, onClose, pageRef
       <IonHeader>
           <IonToolbar>
             <IonTitle>{title}</IonTitle>
-            <IonButtons slot='end'>
+            <IonButtons slot='primary'>
               <IonButton onClick={onClose}>{t('actions.done')}</IonButton>
             </IonButtons>
           </IonToolbar>

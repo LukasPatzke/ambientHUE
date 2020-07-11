@@ -1,6 +1,6 @@
 {
-  "short_name": "Hue Dimmer",
-  "name": "Hue Dimmer",
+  "short_name": "Ambient Hue",
+  "name": "Ambient Hue",
   "icons": [
     {
         "src": "assets/icon/android-chrome-192x192.png",

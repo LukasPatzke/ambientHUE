@@ -41,7 +41,7 @@ export const Range: React.FC<IRangeProps> = ({label, min, max, defaultValue, onC
       <IonItem lines='none'>
         <IonLabel className='lp-range-label'>{label}</IonLabel>
         {reset?<IonButton slot='start' onClick={()=>{onChange(0);setValue(0)}}><IonIcon icon={closeCircle}/></IonButton>:undefined}
-        <IonNote color='dark'>{renderPercentage(value)}</IonNote>
+        <IonNote slot='end' color='dark'>{renderPercentage(value)}</IonNote>
       </IonItem>
       <IonItem>
         <IonRange 

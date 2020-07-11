@@ -1,19 +1,19 @@
-import  React, { useState, useEffect, useRef } from 'react';
+import  React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonGrid, IonList, IonItem, IonLabel, IonButtons, IonButton, IonIcon, ActionSheetButton, IonActionSheet, IonModal, IonSegment, IonSegmentButton, IonInput, IonBadge, IonItemSliding, IonItemOptions, IonItemOption, IonRefresher, IonRefresherContent, useIonViewWillEnter } from '@ionic/react';
-import { ICurve } from '../components/Chart';
 import { useApi } from '../components/useApi';
 import { ListHeader } from 'src/components/ListHeader';
-import { addCircleOutline } from 'ionicons/icons';
+import { addCircleOutline, remove, add, addCircle } from 'ionicons/icons';
 import { Content } from 'src/components/Content';
-import { Curvekind } from 'src/types/hue';
+import { Curvekind, ICurve } from 'src/types/hue';
 import { useHistory } from 'react-router';
 import { RefresherEventDetail } from '@ionic/core';
+import { briCurve, ctCurve } from 'src/dummies';
 
 interface IPageCurvesProps {
 }
 const PageCurves: React.FC<IPageCurvesProps> = () => {
-  const [curves, setCurves] = useState<ICurve[]>([])
+  const [curves, setCurves] = useState<ICurve[]>([briCurve, ctCurve])
   const { t } = useTranslation(['curves', 'common']);
   const pageRef = useRef();
 
@@ -120,13 +120,12 @@ const CurveList: React.FC<ICurveListProps> = ({pageRef, onDelete, onChange, curv
     </ListHeader>
     <IonList ref={customsListRef} inset>
       {customs}
-      
     </IonList>
-    <IonButton className='inset' expand='block' onClick={()=>setModalOpen(true)}>
-      <IonIcon slot='start' icon={addCircleOutline}/>
-      {t('common:actions.add')}
+    <IonButton className='inset primary translucent' expand='block' onClick={()=>setModalOpen(true)}>
+      <IonIcon slot='start' icon={addCircle} color='primary'/>
+      <IonLabel color='primary'>{t('common:actions.add')}</IonLabel>
     </IonButton>
-    <Modal isOpen={isModalOpen} onClose={()=>onChange().then(()=>setModalOpen(false))} pageRef={pageRef}/>
+    <CreateCurve isOpen={isModalOpen} redirect onClose={()=>onChange().then(()=>setModalOpen(false))} pageRef={pageRef}/>
     </>
   )
 }
@@ -142,7 +141,11 @@ export const CurveTypeBadge: React.FC<IBadgeProps> = ({curve}) => {
     color = 'light'
   } else if (curve.kind==='ct') {
     color = 'warning'
-  }
+  } if (curve.kind==='hue') {
+    color = 'primary'
+  } if (curve.kind==='sat') {
+    color = 'dark'
+  } 
   return (
     <IonBadge color={color}>
       {t(`curves:default_names.${curve.kind}`)}
@@ -153,56 +156,75 @@ export const CurveTypeBadge: React.FC<IBadgeProps> = ({curve}) => {
 export default PageCurves;
 
 
-interface IModalProps {
+interface ICreateCurveProps {
   isOpen: boolean;
-  onClose: ()=>void;
-  pageRef?: HTMLElement;
+  onClose: (curve?: ICurve)=>void;
+  pageRef?: HTMLElement | HTMLIonModalElement;
+  fixedKind?:Curvekind;
+  redirect?:boolean
 }
 
-const Modal: React.FC<IModalProps> = ({isOpen, onClose, pageRef}) => {
+export const CreateCurve: React.FC<ICreateCurveProps> = ({isOpen, onClose, pageRef, fixedKind, redirect}) => {
   const { t, i18n } = useTranslation(['common', 'curves']);
-  const [kind, setKind] = useState<Curvekind>('bri')
+  const [kind, setKind] = useState<Curvekind>(fixedKind || 'bri')
   const [name, setName] = useState<string|null>()
+  const [count, setCount] = useState(2);
   
   const { post } = useApi();
   let history = useHistory();
   
   return (
-    <IonModal isOpen={isOpen} onDidDismiss={onClose}>
+    <IonModal isOpen={isOpen} presentingElement={pageRef} swipeToClose onDidDismiss={()=>onClose()}>
       <IonHeader>
         <IonToolbar>
           <IonTitle>{t('curves:create.title')}</IonTitle>
           <IonButtons slot='end'>
-            <IonButton onClick={onClose}>{t('common:actions.cancel')}</IonButton>
+            <IonButton onClick={()=>onClose()}>{t('common:actions.cancel')}</IonButton>
           </IonButtons>
         </IonToolbar>
       </IonHeader>
       <Content>
         <div style={{height: '30px'}}/>
         <IonList lines='inset' >
+          {!fixedKind?
           <IonItem>
             <IonSegment color='primary' value={kind} onIonChange={(e)=>setKind(e.detail.value as Curvekind)}>
               <IonSegmentButton value='bri'>{t('curves:default_names.bri')}</IonSegmentButton>
               <IonSegmentButton value='ct'>{t('curves:default_names.ct')}</IonSegmentButton>
+              <IonSegmentButton value='hue'>{t('curves:default_names.hue')}</IonSegmentButton>
+              <IonSegmentButton value='sat'>{t('curves:default_names.sat')}</IonSegmentButton>
             </IonSegment>
           </IonItem>
+          :undefined}
           <IonItem>
             <IonLabel slot='start'>{t('curves:create.name')}</IonLabel>
             <IonInput value={name} onIonChange={(e)=>setName(e.detail.value)} placeholder={t('curves:create.name')}/>
           </IonItem>
+          <IonItem>
+            <IonLabel slot='start'>{t('curves:create.point_count')}</IonLabel>
+              <IonButton slot='end' disabled={count<=2} onClick={()=>setCount(count-1)}>
+                <IonIcon slot='icon-only' icon={remove} />
+              </IonButton>
+              <IonInput slot='end' style={{maxWidth: '40px', textAlign: 'center'}} min='2' step='1' type='number' value={count} onIonChange={(e)=>setCount(parseInt(e.detail.value || '2'))}/>
+              <IonButton slot='end' onClick={()=>setCount(count+1)}>
+                <IonIcon slot='icon-only' icon={add} />
+              </IonButton>
+          </IonItem>
         </IonList>
         <div style={{height: '50px'}}/>
-        <IonButton className='inset' expand='block' disabled={name?false:true} onClick={()=>{
+        <IonButton className='inset primary translucent' expand='block' disabled={name?false:true} onClick={()=>{
           post({
             url: '/curves/',
-            data: {kind: kind, name: name}
+            data: {kind: kind, name: name, count: count}
           }).then((data:ICurve)=>{
-            history.push(`/curves/${data.id}`)
-            onClose()
+            if (redirect) {
+              history.push(`/curves/${data.id}`)
+            }
+            onClose(data)
           })
         }}>
-          <IonIcon slot='start' icon={addCircleOutline}/>
-          {t('common:actions.add')}
+          <IonIcon slot='start' icon={addCircle} color='primary'/>
+          <IonLabel color='primary'>{t('common:actions.add')}</IonLabel>
         </IonButton>
       </Content>
     </IonModal>

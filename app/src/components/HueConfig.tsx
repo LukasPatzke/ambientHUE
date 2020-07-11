@@ -1,17 +1,18 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { IonModal, IonHeader, IonToolbar, IonTitle, IonSlides, IonSlide, IonContent, IonButton, IonList, IonItem, IonLabel, IonNote, IonIcon, IonInput, IonSpinner, IonItemDivider, IonFooter } from '@ionic/react';
+import { IonModal, IonHeader, IonToolbar, IonTitle, IonSlides, IonSlide, IonContent, IonButton, IonList, IonItem, IonLabel, IonNote, IonIcon, IonInput, IonSpinner, IonItemDivider, IonFooter, IonButtons } from '@ionic/react';
 import { Content } from './Content';
-import { IBridgeDiscovery, IBridgeSync } from 'src/types/hue';
+import { IBridgeDiscovery, IBridgeSync, IBridge } from 'src/types/hue';
 import { useApi } from './useApi';
 import  devicesBridgesV2 from '../icons/hue/devicesBridgesV2.svg';
 import { ListHeader } from './ListHeader';
 import { SpinnerCircularSplit } from 'spinners-react';
 import { useTranslation } from 'react-i18next';
+import { chevronBack } from 'ionicons/icons';
 
 interface IHueConfigProps {
   isOpen: boolean
-  onAbbort: ()=>void
-  onFinish: ()=>void
+  onAbbort?: ()=>void
+  onFinish: (newBridge: Promise<IBridge>)=>void
 }
 
 type state = 'loading'|'success'|'failure'
@@ -20,6 +21,7 @@ export const HueConfig: React.FC<IHueConfigProps> = ({isOpen, onAbbort, onFinish
   const slidesRef = useRef<HTMLIonSlidesElement>(null);
   const inputRef = useRef<HTMLIonInputElement>(null)
 
+  const [isDiscoveryLoading, setDiscoveryLoading] = useState(true)
   const [discovered, setDiscovered] = useState<IBridgeDiscovery[]>([])
   const [connectionState, setConnectionState] = useState<state>('loading')
   const [result, setResult] = useState<IBridgeSync>()
@@ -28,8 +30,15 @@ export const HueConfig: React.FC<IHueConfigProps> = ({isOpen, onAbbort, onFinish
   const { t } = useTranslation(['common', 'settings']);
 
   useEffect(()=>{
-    get({url: '/bridge/discover'}).then(data=>setDiscovered(data))
+    get({url: '/bridge/discover'}).then(data=>{
+      setDiscovered(data)
+      setDiscoveryLoading(false)
+    })
   }, [])
+
+  const finish = () => {
+    onFinish(get({url: '/bridge/'}))
+  }
 
   const next = () => {
     slidesRef.current?.lockSwipeToNext(false);
@@ -73,6 +82,17 @@ export const HueConfig: React.FC<IHueConfigProps> = ({isOpen, onAbbort, onFinish
       <IonSlides ref={slidesRef} options={{allowSlidePrev: false, allowSlideNext: false, initialSlide: 0}}>
         <IonSlide>
           <Content>
+            <IonHeader>
+              <IonToolbar className='transparent'>
+                {onAbbort?
+                <IonButtons slot='primary'>
+                  <IonButton onClick={onAbbort} >
+                    {t('common:actions.cancel')}
+                  </IonButton>
+                </IonButtons>
+                :undefined}
+              </IonToolbar>
+            </IonHeader>
             <div style={{height: '40px'}}/>
             <h1>{t('settings:init.1.title')}</h1>
             <IonItemDivider/>
@@ -81,6 +101,17 @@ export const HueConfig: React.FC<IHueConfigProps> = ({isOpen, onAbbort, onFinish
             </ListHeader>
             <IonList>
               {discoveredBridges}
+              {discoveredBridges.length===0 && !isDiscoveryLoading?
+                <IonItem>
+                  <IonLabel>{t('common:init.1.noresults')}</IonLabel>
+                </IonItem>
+              :undefined}
+              {isDiscoveryLoading?
+                <IonItem>
+                  <IonSpinner slot='start'/>
+                  <IonLabel>{t('common:state.loading')}</IonLabel>
+                </IonItem>
+              :undefined}
             </IonList>
             <div style={{height: '1.5em'}}/>
             <ListHeader>
@@ -114,7 +145,7 @@ export const HueConfig: React.FC<IHueConfigProps> = ({isOpen, onAbbort, onFinish
               </IonLabel>
             </div>
             {connectionState==='loading'?<IonButton onClick={prev} color='medium'>{t('common:actions.cancel')}</IonButton>:undefined}
-            {connectionState==='success'?<IonButton onClick={onFinish} color='primary'>{t('common:actions.done')}</IonButton>:undefined}
+            {connectionState==='success'?<IonButton onClick={finish} color='primary'>{t('common:actions.done')}</IonButton>:undefined}
             {connectionState==='failure'?<IonButton onClick={prev} color='primary'>{t('common:actions.back')}</IonButton>:undefined}
           </Content>
         </IonSlide>
@@ -142,29 +173,30 @@ const Icon: React.FC<IIconProps> = ({state}) => {
   if (state==='loading') {
     options = {
       ionColor: 'primary',
-      color: '#3880ff',
-      secondaryColor: '#f4f5f8',
+      color: 'var(--ion-color-primary)',
+      // secondaryColor: '#f4f5f8',
+      secondaryColor: 'var(--ion-color-step-200)',
       enabled: true
     }
   } else if (state==='success') {
     options = {
       ionColor: 'success',
-      color: '#2dd36f',
-      secondaryColor: '#2dd36f',
+      color: 'var(--ion-color-success)',
+      secondaryColor: 'var(--ion-color-success)',
       enabled: true
     }
   } else if (state==='failure') {
     options = {
       ionColor: 'danger',
-      color: '#eb445a',
-      secondaryColor: '#eb445a',
+      color: 'var(--ion-color-danger)',
+      secondaryColor: 'var(--ion-color-danger)',
       enabled: true
     }
   } else {
     options = {
       ionColor: 'medium',
-      color: '#92949c',
-      secondaryColor: '#f4f5f8',
+      color: 'var(--ion-color-medium)',
+      secondaryColor: 'var(--ion-color-medium)',
       enabled: true
     }
   }

@@ -23,6 +23,15 @@ export const LightSettings: React.FC<ILightSettingsProps> = ({light, onChange}) 
   return (
     <IonList inset>
       <IonItem>
+        <IonLabel>{t('settings.on')}</IonLabel>
+        <IonToggle 
+          checked={light.on} 
+          onIonChange={(e)=>{
+            onChange({on: e.detail.checked} as ILightUpdate)
+          }}
+        />
+      </IonItem>
+      <IonItem>
         <IonLabel>{t('settings.status')}</IonLabel>
         <IonToggle 
           checked={light.on_controlled} 

@@ -26,11 +26,18 @@
             "back": "Zurück",
             "reorder": "Anordnen"
         },
+        "state": {
+            "loading": "Laden"
+        },
         "settings": {
             "status": "Status",
             "offset": "Offset",
             "enabled": "Aktiv",
-            "disabled": "Inaktiv"
+            "disabled": "Inaktiv",
+            "on": "Ein",
+            "off": "Aus",
+            "favorites": "Favoriten",
+            "add_favorites": "Favoriten hinzufügen"
         },
         "serviceWorker": {
             "initialized": "Die Seite ist für die offline Nutzung geladen.",
@@ -41,6 +48,7 @@
         "title": "Leuchten",
         "settings": {
             "title": "Einstellungen",
+            "on": "Ein/Aus",
             "status": "Ein/Aus steuern",
             "threshold": "Ein/Aus Schwellwert",
             "colorTemp": "Farbtemperatur steuern",
@@ -62,9 +70,12 @@
     "curves": {
         "title": "Kurven",
         "defaults": "Standard",
+        "custom": "Benutzerdefiniert",
         "default_names": {
             "ct": "Farbtemperatur",
-            "bri": "Helligkeit"
+            "bri": "Helligkeit",
+            "hue": "Farbton",
+            "sat": "Sättigung"
         },
         "offset": "Versatz",
         "descriptions": {
@@ -73,7 +84,8 @@
         "create": {
             "title": "Kurve hinzufügen",
             "name": "Kurvenname",
-            "type": "Kurventyp"
+            "type": "Kurventyp",
+            "point_count": "Anzahl Punkte"
         },
         "delete": {
             "title": "Löschen bestätigen",
@@ -83,9 +95,24 @@
             "title": "Umbenennen"
         }
     },
+    "webhooks": {
+        "title": "Webhooks",
+        "on": "Aktiv",
+        "name": "Name",
+        "url": "URL",
+        "method": "Methode",
+        "create": "Webhook erstellen",
+        "edit": "Webhook bearbeiten",
+        "trigger": "Auslöser",
+        "trigger_status": "Status",
+        "trigger_lights": "Lampen",
+        "trigger_groups": "Gruppen"
+    },
     "settings": {
         "title": "Einstellungen",
-        "reload": "Neu Laden",
+        "reload": "Seite neu laden",
+        "smart_off": "Smart Off",
+        "smart_off_text": "Erkennt wenn eine Lampe von einer anderen Quelle gesteuert wurde und deaktivert die Steuerung der Lampe temporär.",
         "language": "Sprache",
         "languageOptions": {
             "en": "Englisch",
@@ -106,7 +133,8 @@
                 "title": "Einrichtung der Hue Bridge",
                 "autoconfig": "Automatisch entdeckte Hue Bridges",
                 "manualconfig": "Manuelle Konfiguration",
-                "ipaddress": "IP Adresse"
+                "ipaddress": "IP Adresse",
+                "noresults": "Kein Hue Bridge gefunden"
             },
             "2": {
                 "loading": "Drücke den Knopf auf der Oberseite deiner Hue Bridge",

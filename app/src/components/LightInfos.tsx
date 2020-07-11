@@ -27,7 +27,7 @@ const LightInfo: React.FC<ILightInfoProps> = ({label, value}) => {
   return (
     <IonItem>
       <IonLabel>{label}</IonLabel>
-      <IonNote>{value}</IonNote>
+      <IonNote slot='end'>{value}</IonNote>
     </IonItem>
   )
 }

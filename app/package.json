@@ -1,8 +1,9 @@
 {
-  "name": "app",
+  "name": "AmbientHue",
   "version": "0.0.1",
   "private": true,
   "proxy": "http://localhost:8080",
+  "homepage": "/app",
   "dependencies": {
     "@capacitor/core": "2.1.2",
     "@capacitor/ios": "^2.1.2",

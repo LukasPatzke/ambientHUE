@@ -17,8 +17,29 @@ ion-slides {
     height: 100%;
 }
 
-ion-segment {
+ion-segment-button {
+    --background-checked: var(--ion-color-primary);
     --background: var(--ion-color-primary);
+    --indicator-color: var(--ion-color-primary);
+}
+
+ion-item.large {
+    --padding-top: 0.5em;
+    --padding-bottom: 0.5em;
+}
+
+ion-card.primary.translucent {
+    --background: rgba(var(--ion-color-primary-rgb), 0.1);
+}
+.primary.translucent {
+    --background: rgba(var(--ion-color-primary-rgb), 0.2);
+}
+
+/* Hue Config */
+
+ion-toolbar.transparent {
+    --background: transparent;
+    --border-style: none;
 }
 
 /* Spiner */
@@ -203,6 +224,7 @@ ion-router-outlet,
 
 .lp-tile-content {
     padding: 10px;
+    height: 105px;
 }
 
 .lp-tile-icon {

@@ -1,5 +1,5 @@
 import { IonApp, IonIcon, IonLabel, IonModal, IonRouterOutlet, IonTabBar, IonTabButton, IonTabs, IonToast, isPlatform } from '@ionic/react';
-import { IonReactRouter } from '@ionic/react-router';
+import { IonReactHashRouter as IonReactRouter } from '@ionic/react-router';
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
 import '@ionic/react/css/display.css';
@@ -13,7 +13,7 @@ import '@ionic/react/css/structure.css';
 import '@ionic/react/css/text-alignment.css';
 import '@ionic/react/css/text-transformation.css';
 import '@ionic/react/css/typography.css';
-import { bulb, cog, grid, home } from 'ionicons/icons';
+import { bulb, cog, home } from 'ionicons/icons';
 import React, { useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Redirect, Route } from 'react-router-dom';
@@ -28,13 +28,14 @@ import TabSettings from './pages/TabSettings';
 import TabStart from './pages/TabStart';
 import PageCurves from './pages/PageCurves';
 import PageCurveDetail from './pages/PageCurveDetail';
+import PageSettingsWebhook from './pages/PageSettingsWebhook';
 import * as serviceWorker from './serviceWorker';
 import './theme/ui.css';
 /* Theme variables */
 import './theme/variables.css';
-import appIcon from './icons/icon.svg';
+import appIcon from './icons/icon-bold.svg';
+import Room from './icons/room.svg';
 import { HueConfig } from './components/HueConfig';
-import { IBridge } from './types/hue';
 import { useApi } from './components/useApi';
 
 
@@ -73,7 +74,7 @@ const App: React.FC = () => {
   const tabBarLayout = isPlatform('mobile')?'icon-top':'icon-start'
   return (
     <IonApp>
-      <HueConfig isOpen={!isBridge} onFinish={loadBridge} onAbbort={()=>{}}/>
+      <HueConfig isOpen={!isBridge} onFinish={loadBridge}/>
       <InitialConfig isOpen={isPlatform("capacitor")&&!state?.server} />
       <OfflineScreen isOpen={isOffline}/>
       <IonToast
@@ -106,7 +107,7 @@ const App: React.FC = () => {
       />
       <IonReactRouter >
         <IonTabs>
-          <IonRouterOutlet  >
+          <IonRouterOutlet >
             <Route exact path="/" render={() => <Redirect to="/start" />} />
             <Route exact path="/:tab(start)" component={TabStart} />
             <Route exact path='/:tab(lights)' component={PageLights} />
@@ -116,6 +117,7 @@ const App: React.FC = () => {
             <Route exact path="/:tab(curves)" component={PageCurves} />
             <Route exact path="/:tab(curves)/:id" component={PageCurveDetail} />
             <Route exact path="/:tab(settings)" component={TabSettings} />
+            <Route exact path="/:tab(settings/webhooks)" component={PageSettingsWebhook} />
           </IonRouterOutlet>
           <IonTabBar slot={tabBarSlot} >
             <IonTabButton tab="start" href="/start" layout={tabBarLayout}>
@@ -127,7 +129,7 @@ const App: React.FC = () => {
               <IonLabel>{t('tabs.lights')}</IonLabel>
             </IonTabButton>
             <IonTabButton tab="groups" href="/groups" layout={tabBarLayout}>
-              <IonIcon icon={grid} />
+              <IonIcon icon={Room} />
               <IonLabel>{t('tabs.groups')}</IonLabel>
             </IonTabButton>
             <IonTabButton tab="curves" href="/curves" layout={tabBarLayout}>

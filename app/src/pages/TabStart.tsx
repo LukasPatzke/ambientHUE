@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect, RefObject } from 'react';
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonGrid, IonCard, IonCardContent, IonIcon, IonLabel, IonRow, IonCol, IonButtons, IonButton, IonModal, IonReorderGroup, IonItem, IonReorder, IonList, IonRefresher, IonRefresherContent, IonItemSliding, IonItemOptions, IonItemOption, useIonViewWillEnter } from '@ionic/react';
 import { ItemReorderEventDetail, RefresherEventDetail } from '@ionic/core';
 import './TabStart.css';
-import { IPosition } from 'src/types/hue';
+import { IPosition, ILightInfo, IGroupInfo } from 'src/types/hue';
 import { useApi } from '../components/useApi';
 import appIcon from '../icons/icon.svg'
 import appIconColor from '../icons/icon-color.svg'
@@ -16,7 +16,7 @@ import { position as dummyPosition } from '../dummies';
 
 const TabStart: React.FC = () => {
   const pageRef = useRef();
-  const [positions, setPositions] = useState<IPosition[]>([dummyPosition, dummyPosition, dummyPosition])
+  const [positions, setPositions] = useState<IPosition[]>([])
   const [active, setActive] = useState<boolean>(false);
   const [reorder, setReorder] = useState<boolean>(false)
   const { get, put } = useApi();
@@ -31,6 +31,19 @@ const TabStart: React.FC = () => {
     get({url: '/positions/'}).then(data=>setPositions(data)),
     get({url: '/status/'}).then(data=>setActive(data.status))
   ])
+
+  const handleLightClick = (light: ILightInfo) => {
+    put({
+      url: `/lights/${light.id}`,
+      data: {on: !light.on}
+    }).then(update)
+  }
+  const handleGroupClick = (group: IGroupInfo) => {
+    put({
+      url: `/groups/${group.id}`,
+      data: {on: !group.lights[0].on}
+    }).then(update)
+  }
 
   const doRefresh = (e: CustomEvent<RefresherEventDetail>) => {
     Promise.all(update()).then(()=>e.detail.complete())
@@ -63,7 +76,7 @@ const TabStart: React.FC = () => {
             icon={bulb}
             label={pos.light.name}
             state={pos.light.on}
-            routerLink={`/lights/${pos.light.id}`}
+            onClick={()=>pos.light?handleLightClick(pos.light):undefined}
             disabled={!active}
           />
         )
@@ -74,7 +87,7 @@ const TabStart: React.FC = () => {
             icon={grid}
             label={pos.group.name}
             state={pos.group.lights[0]?.on}
-            routerLink={`/groups/${pos.group.id}`}
+            onClick={()=>pos.group?handleGroupClick(pos.group):undefined}
             disabled={!active}
           />
         )
@@ -89,7 +102,7 @@ const TabStart: React.FC = () => {
               {t('actions.edit')}
             </IonButton>
           </IonButtons>
-          <IonTitle>Hue Dimmer</IonTitle>
+          <IonTitle>Ambient Hue</IonTitle>
         </IonToolbar>
       </IonHeader>
       <IonContent fullscreen>
@@ -99,7 +112,7 @@ const TabStart: React.FC = () => {
         <IonGrid fixed>
         <IonHeader collapse="condense">
           <IonToolbar>
-            <IonTitle size="large">Hue Dimmer</IonTitle>
+            <IonTitle size="large">Ambient Hue</IonTitle>
           </IonToolbar>
         </IonHeader>
         <IonRow class="ion-justify-content-start" style={{marginTop: '10px'}}>
@@ -113,9 +126,21 @@ const TabStart: React.FC = () => {
             })}
           />
         </IonRow>
-        <ListHeader><IonLabel>Favoriten</IonLabel></ListHeader>
+        <ListHeader><IonLabel>{t('settings.favorites')}</IonLabel></ListHeader>
         <IonRow class="ion-justify-content-start">
           {tiles}
+          {tiles.length===0?
+          <IonCol sizeXl='auto' sizeLg='auto' sizeMd='auto' sizeSm='auto' sizeXs='4'>
+            <IonCard button onClick={()=>setReorder(true)} className='lp-tile primary translucent'>
+              <IonCardContent  className='lp-tile-content'>
+                <div className='lp-tile-icon'><IonIcon icon={addCircle} color='primary'/></div>
+                <div className='lp-tile-text'>
+                  <div className='lp-tile-label'><IonLabel color='dark'>{t('actions.add')}</IonLabel></div>
+                </div>
+              </IonCardContent>
+            </IonCard>
+          </IonCol>
+          :undefined}
         </IonRow>
         </IonGrid>
       </IonContent>
@@ -144,6 +169,7 @@ interface ITile {
 
 export const Tile: React.FC<ITile> = ({icon, label, state, onClick, routerLink, size='small', style, disabled}) => {
   const colSize = size==='large'?'12':'auto';
+  const { t } = useTranslation('common')
   return (
     <IonCol sizeXl={colSize} sizeLg={colSize} sizeMd={colSize} sizeSm={colSize} sizeXs={size==='small'?'4':'12'}>
       <IonCard 
@@ -156,10 +182,10 @@ export const Tile: React.FC<ITile> = ({icon, label, state, onClick, routerLink, 
         className={size==='small'?'lp-tile':'lp-tile large'}
       >
         <IonCardContent className={disabled?'lp-tile-content disabled':'lp-tile-content'}>
-          <div className='lp-tile-icon'><IonIcon icon={icon}/></div>
+          <div className='lp-tile-icon'><IonIcon icon={icon} color={state?'primary':undefined}/></div>
           <div className='lp-tile-text'>
             <div className='lp-tile-label'><IonLabel color={state?'dark':undefined}>{label}</IonLabel></div>
-            <div className='lp-tile-state'><IonLabel>{state?'Ein':'Aus'}</IonLabel></div>
+            <div className='lp-tile-state'><IonLabel>{state?t('settings.on'):t('settings.off')}</IonLabel></div>
           </div>
         </IonCardContent>
       </IonCard>

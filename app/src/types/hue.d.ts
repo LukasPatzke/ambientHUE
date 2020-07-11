@@ -15,7 +15,7 @@ export interface IPointCreate {
   position: 'before'|'after'
 }
 
-export type Curvekind = 'ct'|'bri'
+export type Curvekind = 'ct'|'bri'|'hue'|'sat'
 
 export interface ICurve {
   id: number
@@ -41,8 +41,8 @@ export interface ILight extends ILightBase {
   ct_controlled: boolean
   bri_controlled: boolean
   bri_max: number
-  bri_curve: ICurve
-  ct_curve: ICurve
+  bri_curve?: ICurve
+  ct_curve?: ICurve
 }
 export interface ILightInfo extends ILightBase {}
 
@@ -106,4 +106,41 @@ export interface IBridgeDiscovery {
   internalipaddress: string
   macaddress?: string
   name?: string
+}
+
+interface IHeaderBase {
+  name: string
+  value: string
+}
+
+export interface IHeader extends IHeaderBase {
+  id: int
+}
+export interface IHeaderUpdate extends IHeaderBase {}
+
+export interface IHeaderCreate extends IHeaderBase {
+  webhook_id: int
+}
+
+export type method = 'GET' | 'POST'
+export type trigger = 'status' | 'lights' | 'groups'
+
+interface IWebhookBase {
+  on: boolean
+  name?: string
+  url?: string
+  body?: string
+  method?: method
+  trigger?: trigger
+}
+
+export interface IWebhookUpdate extends IWebhookBase {}
+
+export interface IWebHook extends IWebhookBase {
+  id: int
+  headers: IHeader[]
+}
+
+export interface ISettings {
+  smart_off: boolean
 }

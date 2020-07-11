@@ -8,11 +8,12 @@ interface IActionSheetProps {
   itemIndex: number;
   dataLenght: number;
   onDelete: (itemIndex: number) => void;
+  onEdit: () => void;
   onInsert: (itemIndex: number, position: 'before' | 'after') => void;
   onCancel: () => void;
 }
 
-export const ActionSheet: React.FC<IActionSheetProps> = ({isOpen, itemIndex, dataLenght, onDelete, onInsert, onCancel}) => {
+export const ActionSheet: React.FC<IActionSheetProps> = ({isOpen, itemIndex, dataLenght, onDelete, onInsert, onCancel, onEdit}) => {
   const { t } = useTranslation('common');
 
   var buttons: ActionSheetButton[] = [
@@ -20,6 +21,10 @@ export const ActionSheet: React.FC<IActionSheetProps> = ({isOpen, itemIndex, dat
       text: t('actions.delete'),
       role: 'destructive',
       handler: () => onDelete(itemIndex)
+    },
+    {
+      text: t('actions.edit'),
+      handler: () => onEdit()
     }
   ]
   if (itemIndex !== 0) {

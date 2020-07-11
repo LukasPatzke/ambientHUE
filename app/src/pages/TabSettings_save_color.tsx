@@ -11,7 +11,6 @@ import { useApi } from 'src/components/useApi';
 import  devicesBridgesV2 from '../icons/hue/devicesBridgesV2.svg';
 import { ListFooter } from 'src/components/ListFooter';
 import { HueConfig } from 'src/components/HueConfig';
-import { ListDivider } from 'src/components/ListDivider';
 
 const TabSettings: React.FC = () => {
   const [ isLanguageOpen, setLanguageOpen ] = useState(false);
@@ -47,16 +46,15 @@ const TabSettings: React.FC = () => {
             <IonTitle size='large'>{t('title')}</IonTitle>
           </IonToolbar>
         </IonHeader>
-        <ListDivider/>
         <IonList>
           <IonItem button onClick={()=>setLanguageOpen(true)}>
             <IonLabel>{t('language')}</IonLabel>
-            <IonIcon slot='start' icon={language} color='primary'/>
+            <IonIcon slot='start' icon={language} color='red'/>
             <IonNote slot='end'>{t(`languageOptions.${i18n.language}`)}</IonNote>
           </IonItem>
           <IonItem>
             <IonLabel>{t('smart_off')}</IonLabel>
-            <IonIcon  slot='start' icon={colorWand} color='primary'/>
+            <IonIcon  slot='start' icon={colorWand} color='orange'/>
             <IonToggle checked={smartOff} onIonChange={(e)=>{
               put({
                 url: '/settings/', 
@@ -73,7 +71,7 @@ const TabSettings: React.FC = () => {
         
           <IonItem button onClick={()=>setServerOpen(true)}>
             <IonLabel>{t('server.title')}</IonLabel>
-            <IonIcon slot='start' icon={globe} color='primary'/>
+            <IonIcon slot='start' icon={globe} color='blue'/>
             {state?.ssl?<IonIcon color='medium' size='small' icon={lockClosed} style={{marginRight: '5px'}}/>:undefined}
             <IonNote slot='end'>{state?.server}</IonNote>
           </IonItem>
@@ -82,7 +80,7 @@ const TabSettings: React.FC = () => {
         <ListHeader><IonLabel>Hue Bridge</IonLabel></ListHeader>
         <IonList>
           <IonItem button onClick={()=>setHueConfigOpen(true)}>
-            <IonIcon slot='start' icon={devicesBridgesV2} color='primary'/>
+            <IonIcon slot='start' icon={devicesBridgesV2} color='blue'/>
             <IonLabel>{bridge?.name||'Hue Bridge'}</IonLabel>
             <IonNote slot='end'>{bridge?.ipaddress}</IonNote>
           </IonItem>
@@ -98,7 +96,7 @@ const TabSettings: React.FC = () => {
             })
           }}
           >
-            <IonIcon slot='start' icon={syncCircle} color='primary'/>
+            <IonIcon slot='start' icon={syncCircle} color='blue'/>
             <IonLabel>Sync with bridge</IonLabel>
             {isBridgeSync?<IonSpinner slot='end'/>:undefined}
             {isBridgeSyncErr?<IonIcon slot='end' icon={alertCircle} color='danger'/>:undefined}
@@ -107,7 +105,7 @@ const TabSettings: React.FC = () => {
         <ListHeader><IonLabel>Extern</IonLabel></ListHeader>
         <IonList>
           <IonItem routerLink='/settings/webhooks' routerDirection='forward'>
-          <IonIcon slot='start' icon={link} color='primary'/>
+          <IonIcon slot='start' icon={link} color='purple'/>
             <IonLabel>Webhooks</IonLabel>
           </IonItem>
         </IonList>
@@ -115,7 +113,7 @@ const TabSettings: React.FC = () => {
         <IonList>
           <IonItem onClick={window.location.reload}>
             <IonLabel>{t('reload')}</IonLabel>
-            <IonIcon slot='start' icon={reloadCircle} color='primary'/>
+            <IonIcon slot='start' icon={reloadCircle} color='green'/>
           </IonItem>
         </IonList>
         <LangageSettings isOpen={isLanguageOpen} pageRef={pageRef.current} onClose={()=>setLanguageOpen(false)}/>

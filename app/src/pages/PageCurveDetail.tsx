@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation, setDefaults } from 'react-i18next';
-import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonLabel, IonButton, IonIcon, IonGrid, IonCard, IonCardContent, IonList, IonAlert, IonItem, IonNote, IonRefresher, IonRefresherContent, useIonViewWillEnter } from '@ionic/react';
+import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonLabel, IonButton, IonIcon, IonGrid, IonCard, IonCardContent, IonList, IonAlert, IonItem, IonNote, IonRefresher, IonRefresherContent, useIonViewWillEnter, IonItemSliding, IonItemOptions, IonItemOption } from '@ionic/react';
 import { RouteComponentProps, useHistory } from 'react-router';
-import { chevronBack, sunny  } from 'ionicons/icons';
-import { Chart, ICurve, IChange, IOnChange } from 'src/components/Chart';
+import { chevronBack, sunny, chevronUp  } from 'ionicons/icons';
+import { Chart, IChange, IOnChange } from 'src/components/Chart';
 import { ChartModal } from '../components/ChartModal';
 import { useApi } from '../components/useApi';
 import { Range } from '../components/Range';
@@ -12,12 +12,24 @@ import { debounce } from 'lodash';
 import { ListFooter } from 'src/components/ListFooter';
 import { CurveTypeBadge } from './PageCurves';
 import { RefresherEventDetail } from '@ionic/core';
+import { ICurve } from 'src/types/hue';
 
-interface ICurveDetailProps extends RouteComponentProps<{
+interface IPageCurveDetailProps extends RouteComponentProps<{
   id: string;
 }> {}
 
-const PageCurveDetail : React.FC<ICurveDetailProps> = ({match}) => {
+const PageCurveDetail: React.FC<IPageCurveDetailProps> = ({match}) => (
+  <CurveDetail id={parseInt(match.params.id)}/>
+)
+
+interface ICurveDetailProps {
+  id: number;
+  embedded?: boolean;
+  embeddedRef?: HTMLElement
+  onDelete?: ()=>void;
+}
+
+export const CurveDetail : React.FC<ICurveDetailProps> = ({id, embedded=false, embeddedRef, onDelete}) => {
   const pageRef = useRef();
 
   const [curve, setCurve] = useState<ICurve>()
@@ -32,10 +44,10 @@ const PageCurveDetail : React.FC<ICurveDetailProps> = ({match}) => {
 
   useEffect(()=>{
     update()
-  }, [])
+  }, [id])
 
   const update = () => (
-    api.get({url: `/curves/${match.params.id}`}).then(data=>{
+    api.get({url: `/curves/${id}`}).then(data=>{
       setCurve(data)
     })
   )
@@ -95,119 +107,134 @@ const PageCurveDetail : React.FC<ICurveDetailProps> = ({match}) => {
     return null;
   } else {
     const name = curve.default?t(`curves:default_names.${curve.kind}`):curve.name
-    return (
-      <IonPage ref={pageRef}>
-        <IonHeader translucent>
-          <IonToolbar>
-            <IonButtons slot="start">
-              <IonButton routerLink='/curves' routerDirection='back'>
-                <IonIcon slot='start' icon={chevronBack} />
-                {t('curves:title')}
-              </IonButton>
-            </IonButtons>
-            <IonTitle>{name}</IonTitle>
-          </IonToolbar>
-        </IonHeader>
-        <IonContent fullscreen>
-          <IonRefresher slot="fixed" onIonRefresh={doRefresh}>
-            <IonRefresherContent/>
-          </IonRefresher>
-          <IonGrid fixed>
-            <IonHeader collapse="condense">
-              <IonToolbar>
-                <IonTitle size="large">{name}</IonTitle>
-              </IonToolbar>
-            </IonHeader>
-            <IonList inset>
-              <IonItem button onClick={()=>setShowRenameAlert(true)}>
-                <IonLabel>{t('curves:create.name')}</IonLabel>
-                <IonNote>{curve.name}</IonNote>
-              </IonItem>
-              <IonItem>
-                <IonLabel>{t('curves:create.type')}</IonLabel>
-                <CurveTypeBadge curve={curve}/>
-              </IonItem>
-            </IonList>
-            <IonCard onClick={handleModalOpen}>
-              <IonCardContent>
-                <Chart curve={curve} onChange={onChange}/>
-              </IonCardContent>
-              <ChartModal isOpen={isModalOpen} onClose={()=>setModalOpen(false)} pageRef={pageRef.current} title={name}>
-                <Chart curve={curve} onChange={onChange} />
-              </ChartModal>
-            </IonCard>
-            <IonList inset className='lp-remove-margin-bottom'>
-              <Range min={-250} max={250} step={5} snaps ticks={false} label={t('curves:offset')} reset onChange={handleOffsetChange} defaultValue={curve.offset}>
-                <IonIcon size='small' slot='start' icon={sunny} onClick={()=>handleOffsetChange(curve.offset-5)}/>
-                <IonIcon slot='end' icon={sunny} onClick={()=>handleOffsetChange(curve.offset+5)}/>
-              </Range>
-            </IonList>
-            <ListFooter>
-              <IonLabel>{t('curves:descriptions.offset')}</IonLabel>
-            </ListFooter>
-            {!curve.default?
-            <IonButton onClick={()=>setShowDeleteAlert(true)} className='inset' expand='block' color='danger'>
-              {t('common:actions.delete')}
-            </IonButton>
-            :undefined}
-            <IonAlert
-              isOpen={showDeleteAlert}
-              onDidDismiss={() => setShowDeleteAlert(false)}
-              header={t('curves:delete.title', {name: curve.name})}
-              message={t('curves:delete.text', {name: curve.name})}
-              buttons={[
-                {
-                  text: t('common:actions.cancel'),
-                  role: 'cancel',
-                  cssClass: 'secondary',
-                  handler: () => setShowDeleteAlert(false)
-                },
-                {
-                  text: t('common:actions.delete'),
-                  role: 'delete',
-                  handler: () => {
-                    api.delete({url: `/curves/${curve.id}`}).then(()=>{
-                      history.push('/curves')
-                    })
+    const content = (
+      <>
+        <IonList inset>
+          <IonItem button onClick={()=>setShowRenameAlert(true)}>
+            <IonLabel>{t('curves:create.name')}</IonLabel>
+            <IonNote slot='end'>{curve.name}</IonNote>
+          </IonItem>
+          <IonItem>
+            <IonLabel>{t('curves:create.type')}</IonLabel>
+            <CurveTypeBadge curve={curve}/>
+          </IonItem>
+        </IonList>
+        <IonList inset>
+          <IonButton size='small' expand='block' fill='clear' onClick={handleModalOpen}>
+            <IonIcon slot='icon-only' icon={chevronUp} color='medium'/>
+          </IonButton>
+          <div style={{margin: '20px', marginTop: 0}} >
+            <Chart curve={curve} onChange={onChange}/>
+          </div>
+          <ChartModal isOpen={isModalOpen} onClose={()=>setModalOpen(false)} pageRef={embedded?embeddedRef:pageRef.current} title={name}>
+            <Chart curve={curve} onChange={onChange} />
+          </ChartModal>
+        </IonList>
+        <IonList inset className='lp-remove-margin-bottom'>
+          <Range min={-250} max={250} step={5} snaps ticks={false} label={t('curves:offset')} reset onChange={handleOffsetChange} defaultValue={curve.offset}>
+            <IonIcon size='small' slot='start' icon={sunny} onClick={()=>handleOffsetChange(curve.offset-5)}/>
+            <IonIcon slot='end' icon={sunny} onClick={()=>handleOffsetChange(curve.offset+5)}/>
+          </Range>
+        </IonList>
+        <ListFooter>
+          <IonLabel>{t('curves:descriptions.offset')}</IonLabel>
+        </ListFooter>
+        {!curve.default?
+        <IonButton onClick={()=>setShowDeleteAlert(true)} className='inset' expand='block' color='danger'>
+          {t('common:actions.delete')}
+        </IonButton>
+        :undefined}
+        <IonAlert
+          isOpen={showDeleteAlert}
+          onDidDismiss={() => setShowDeleteAlert(false)}
+          header={t('curves:delete.title', {name: curve.name})}
+          message={t('curves:delete.text', {name: curve.name})}
+          buttons={[
+            {
+              text: t('common:actions.cancel'),
+              role: 'cancel',
+              cssClass: 'secondary',
+              handler: () => setShowDeleteAlert(false)
+            },
+            {
+              text: t('common:actions.delete'),
+              role: 'delete',
+              handler: () => {
+                api.delete({url: `/curves/${curve.id}`}).then(()=>{
+                  if (!embedded) {
+                    history.push('/curves')
                   }
-                }
-              ]}
-            />
-            <IonAlert
-              isOpen={showRenameAlert}
-              onDidDismiss={() => setShowRenameAlert(false)}
-              header={t('curves:rename.title', {name: curve.name})}
-              buttons={[
-                {
-                  text: t('common:actions.cancel'),
-                  role: 'cancel',
-                  cssClass: 'secondary',
-                  handler: () => setShowRenameAlert(false)
-                },
-                {
-                  text: t('common:actions.done'),
-                  handler: (data) => {
-                    api.put({
-                      url: `/curves/${curve.id}`,
-                      data: {name: data.name}
-                    }).then(data=>setCurve(data))
-                  }
-                }
-              ]}
-              inputs={[
-                {
-                  name: 'name',
-                  type: 'text',
-                  id: 'name-id',
-                  value: curve.name,
-                  placeholder: ''
-                }
-              ]}
-            />
-          </IonGrid>
-        </IonContent>
-      </IonPage>
+                  if (onDelete) {onDelete()}
+                })
+              }
+            }
+          ]}
+        />
+        <IonAlert
+          isOpen={showRenameAlert}
+          onDidDismiss={() => setShowRenameAlert(false)}
+          header={t('curves:rename.title', {name: curve.name})}
+          buttons={[
+            {
+              text: t('common:actions.cancel'),
+              role: 'cancel',
+              cssClass: 'secondary',
+              handler: () => setShowRenameAlert(false)
+            },
+            {
+              text: t('common:actions.done'),
+              handler: (data) => {
+                api.put({
+                  url: `/curves/${curve.id}`,
+                  data: {name: data.name}
+                }).then(data=>setCurve(data))
+              }
+            }
+          ]}
+          inputs={[
+            {
+              name: 'name',
+              type: 'text',
+              id: 'name-id',
+              value: curve.name,
+              placeholder: ''
+            }
+          ]}
+        />
+      </>
     )
+    if (embedded) {
+      return content
+    } else {
+      return (
+        <IonPage ref={pageRef}>
+          <IonHeader translucent>
+            <IonToolbar>
+              <IonButtons slot="start">
+                <IonButton routerLink='/curves' routerDirection='back'>
+                  <IonIcon slot='start' icon={chevronBack} />
+                  {t('curves:title')}
+                </IonButton>
+              </IonButtons>
+              <IonTitle>{name}</IonTitle>
+            </IonToolbar>
+          </IonHeader>
+          <IonContent fullscreen>
+            <IonRefresher slot="fixed" onIonRefresh={doRefresh}>
+              <IonRefresherContent/>
+            </IonRefresher>
+            <IonGrid fixed>
+              <IonHeader collapse="condense">
+                <IonToolbar>
+                  <IonTitle size="large">{name}</IonTitle>
+                </IonToolbar>
+              </IonHeader>
+              {content}
+            </IonGrid>
+          </IonContent>
+        </IonPage>
+      )
+    }
   }
 }
 

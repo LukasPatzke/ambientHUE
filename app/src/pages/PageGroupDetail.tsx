@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonButton, IonIcon, IonLabel, IonGrid, IonRefresher, IonRefresherContent } from '@ionic/react';
 import { IGroup, ILightUpdate } from '../types/hue';
@@ -9,6 +9,7 @@ import { ListHeader } from '../components/ListHeader';
 import { LightList } from '../components/LightList';
 import { useApi } from '../components/useApi';
 import { RefresherEventDetail } from '@ionic/core';
+import { LightCurveSettings } from 'src/components/LightCurveSettings';
 
 interface IPageGroupDetail extends RouteComponentProps<{
   id: string;
@@ -19,6 +20,7 @@ const PageGroupDetail : React.FC<IPageGroupDetail> = ({match}) => {
   const { t } = useTranslation(['groups', 'lights']);
   const { get, put } = useApi();
 
+  const pageRef = useRef();
   useEffect(()=>{
     update()
   }, [])
@@ -46,7 +48,7 @@ const PageGroupDetail : React.FC<IPageGroupDetail> = ({match}) => {
     return null;
   } else {
     return (
-      <IonPage>
+      <IonPage ref={pageRef}>
         <IonHeader translucent>
           <IonToolbar>
             <IonButtons slot="start">
@@ -76,6 +78,10 @@ const PageGroupDetail : React.FC<IPageGroupDetail> = ({match}) => {
               <IonLabel>{t('lights:settings.title')}</IonLabel>
             </ListHeader>
             <LightSettings light={group.lights[0]} onChange={handleChange}/>
+            <ListHeader inset>
+              <IonLabel>{t('curves:title')}</IonLabel>
+            </ListHeader>
+            <LightCurveSettings light={group.lights[0]} onChange={handleChange} pageRef={pageRef.current}/>
           </IonGrid>
         </IonContent>
       </IonPage>
