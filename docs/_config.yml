@@ -1,0 +1,146 @@
+#page title
+page_title                                : ambientHUE                                         # Automatically populates with app name if not set and if iOS app ID is set. Otherwise enter manually.
+
+# App Info
+ios_app_id                                :                                           # Required. Enter iOS app ID to automatically populate name, price and icons (e.g. 718043190).
+
+appstore_link                             :                                           # Automatically populates if not set and if iOS app ID is set. Otherwise enter manually.
+playstore_link                            :                                           # Enter Google Play Store URL.
+github_link                               : https://github.com/LukasPatzke/ambientHUE
+presskit_download_link                    :                                           # Enter a link to downloadable file or (e.g. public Dropbox link to a .zip file). 
+                                                                                      # Or upload your press kit file to assets and set path accordingly (e.g. "assets/your_press_kit.zip").
+
+app_favicon                               : assets/icon-transparent.png
+app_icon                                  : assets/icon-dark.png                      # Automatically populates if not set and if iOS app ID is set.  Otherwise enter path to icon file manually.
+app_name                                  : ambientHUE                                          # Automatically populates if not set and if iOS app ID is set.  Otherwise enter manually.
+app_price                                 :                                           # Automatically populates if not set and if iOS app ID is set.  Otherwise enter manually.
+app_description                           : Make your smart lights smart.
+
+enable_smart_app_banner                   : false                                      # Set to true to show a smart app banner at top of page on mobile devices.
+
+
+
+# Information About Yourself
+your_name                                 : Lukas Patzke                           
+your_link                                 : https://lukas.patzke.me                     
+your_city                                 :                                 
+email_address                             : 
+facebook_username                         :                                           
+instagram_username                        : 
+twitter_username                          : 
+github_username                           : LukasPatzke
+youtube_username                          :
+
+
+
+# Feature List                            Edit, add or remove features to be presented.
+features                                  :
+
+  - title                                 : Philips Hue Integration
+    description                           : Integrates with your Philips Hue smart lights and any third party zigbee light on your Hue Bridge
+    icon                                  : assets/icons/hue.svg
+
+  - title                                 : Docker Images
+    description                           : Run on a Raspberry Pi or another server on your home network with a single command via Docker. 
+    ionicon                               : logo-docker
+    
+  - title                                 : Dynamic Ambient Light
+    description                           : Dynamically adjusts the brightness and color temperature of your lights and groups.
+    ionicon                               : bulb
+
+  - title                                 : Mobile-first Web Application
+    description                           : Comes with a beautiful mobile first web application, that runs on all devices. Based on the Ionic Framework
+    ionicon                               : phone-portrait
+
+  - title                                 : Custom Curves
+    description                           : Create custom brightness and color temperature curves for indiviual lighting throughout the day.
+    icon                                  : assets/icons/icon.svg
+
+  - title                                 : Smart Off
+    description                           : Automatically detects if lights are user controlled and will not override them.
+    ionicon                               : color-wand
+
+  - title                                 : Webhooks
+    description                           : Create webhooks for easy integration with other applications
+    ionicon                               : link
+  
+  - title                                 : Homebridge Webhook Assistant
+    description                           : Easy integration with the Homebridge HTTP Webhooks plugin
+    icon                                  : assets/icons/homebridge.svg
+
+  - title                                 : Open API
+    description                           : Provides an open API including a Swagger UI documentation provided by fastapi. 
+    ionicon                               : construct
+
+  - title                                 : # New Feature Title
+    description                           : # New Feature Description
+    fontawesome_icon_name                 : # Enter Font Awesome icon name (e.g. star). Find icons on fontawesome.com/icons.
+    ionicon                               : # Enter Iconicon icon name. Find icons on ionicons.com.
+    icon                                  : # Enter path to svg icon (e.g. assets/icons/icon.svg).
+
+
+
+# Theme Settings
+topbar_color                              : "#20252B"
+topbar_transparency                       : 1
+topbar_title_color                        : "#ffffff"
+topbar_icon                               : assets/icon-transparent.png
+
+cover_image                               :                   # Replace with alternative image path or image URL.
+cover_overlay_color                       : "#2980B9"
+cover_overlay_transparency                : 1
+
+device_color                              : black                                     # Set to: blue, black, yellow, coral or white.
+
+body_background_color                     : "#ffffff"
+
+link_color                                : "#2980B9"
+
+app_title_color                           : "#ffffff"
+app_price_color                           : "#ffffff"
+app_description_color                     : "#ffffff"
+
+feature_title_color                       : "#000000"
+feature_text_color                        : "#666666"
+
+feature_icons_foreground_color            : "#2980B9"
+feature_icons_background_color            : "#e6e6e6"
+
+social_icons_foreground_color             : "#666666"
+social_icons_background_color             : "#e6e6e6"
+
+footer_text_color                         : "#666666"
+
+
+
+
+
+
+
+
+
+
+
+
+
+####################################################
+### Jekyll Configuration. No need to touch this. ###
+####################################################
+
+# Set the Sass partials directory, as we're using @imports
+sass:
+  style: :compressed # You might prefer to minify using :compressed
+
+# Exclude these files from your production _site
+exclude:
+  - LICENSE
+  - README.md
+  - CNAME
+
+collections:
+  pages:
+    output: true
+    permalink: /:path/
+
+# Markdown rendering
+markdown: kramdown

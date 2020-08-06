@@ -1,0 +1,5 @@
+/venv/
+__pycache__/
+/build/
+*.sqlite
+init_database_dev.py

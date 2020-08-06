@@ -1,0 +1,40 @@
+<div class="features">
+
+    {% for feature in site.features %}
+
+    {% if feature.title %}
+    <div class="feature">
+        <div>
+            {% if feature.fontawesome_icon_name %}
+            <span class="fa-stack fa-1x">
+                <i class="iconBack fas fa-circle fa-stack-2x"></i>
+                <i class="iconTop fas fa-{{ feature.fontawesome_icon_name }} fa-stack-1x"></i>
+            </span>
+            {% endif %}
+            {% if feature.ionicon %}
+            <span class="fa-stack fa-1x">
+                <ion-icon class="iconBack fa-stack-2x" name="ellipse"></ion-icon>
+                <ion-icon class="iconTop fa-stack-1x" name="{{ feature.ionicon }}"></ion-icon>
+            </span>
+            {% endif %}
+            {% if feature.icon %}
+            <span class="fa-stack fa-1x">
+                <ion-icon class="iconBack fa-stack-2x" name="ellipse"></ion-icon>
+                <ion-icon class="iconTop fa-stack-1x" src="{{ site.github.baseurl }}/{{ feature.icon }}"></ion-icon>
+            </span>
+            {% endif %}
+        </div>
+        <div class="featureText">
+            <h3>
+                {{ feature.title }}
+            </h3>
+            <p>
+                {{ feature.description }}
+            </p>
+        </div>
+    </div>
+    {% endif %}
+
+    {% endfor %}
+
+</div>
