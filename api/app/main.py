@@ -37,7 +37,7 @@ def get_db():
 api = FastAPI(
     title='Ambient Hue',
     description='Make your smart lights smart',
-    version='0.0.1',
+    version='0.0.2',
     root_path='/api'
 )
 
