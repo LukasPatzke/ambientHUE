@@ -10,7 +10,7 @@ RUN apk add --no-cache --virtual .build-deps gcc libc-dev make \
 
 EXPOSE 8080
 
-COPY ./api/app /opt/api/app
+COPY ./api /opt/api
 
 ARG BUILD_DATE
 ARG VCS_REF
