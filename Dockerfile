@@ -1,4 +1,4 @@
-FROM python:3.7-alpine3.8
+FROM python:3.8-alpine3.8
 
 COPY ./api/requirements.txt /opt/api/requirements.txt
 WORKDIR /opt/api
@@ -25,5 +25,7 @@ LABEL maintainer="LukasPatzke" \
   org.opencontainers.image.title="ambientHUE" \
   org.opencontainers.image.licenses="MIT"
 
+HEALTHCHECK --interval=5m --timeout=3s \
+  CMD curl -f http://localhost:8080/ || exit 1
 
 ENTRYPOINT ["gunicorn", "app.main:app", "-b", "0.0.0.0:8080", "-w", "4", "-k", "uvicorn.workers.UvicornWorker",  "--preload"]
