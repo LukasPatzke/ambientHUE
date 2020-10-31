@@ -1,4 +1,5 @@
 from typing import Optional
+from functools import lru_cache
 from app import models, schemas
 from app.database import SessionLocal, engine
 from app.endpoints.bridge import hue_api
@@ -12,6 +13,7 @@ import requests
 log = logging.getLogger(__name__)
 
 
+@lru_cache
 def calc_curve_value(
     db: Session,
     curve: schemas.Curve,
@@ -83,17 +85,18 @@ def get_request_body(db, light):
     return body
 
 
-def run(disable=False):
+def run(disable=False, lights=None):
     """ Calculate and execute the current state"""
     db = SessionLocal()
-    models.Base.metadata.create_all(bind=engine)
 
     status = db.query(models.Status).first()
+    api = hue_api()
     if status.status:
         settings = db.query(models.Settings).first()
 
-        hue_prev = requests.get(f'{hue_api()}/lights').json()
-        lights = db.query(models.Light).all()
+        hue_prev = requests.get(f'{api}/lights').json()
+        if not lights:
+            lights = db.query(models.Light).all()
 
         bri_default = (db.query(models.Curve).filter_by(default=True)
                                              .filter_by(kind='bri').first())
@@ -144,21 +147,22 @@ def run(disable=False):
                 log.debug('skipping request, light %s is off', light.id)
             else:
                 response = requests.put(
-                    f'{hue_api()}/lights/{light.id}/state',
+                    f'{api}/lights/{light.id}/state',
                     json=body
                 )
                 log.debug('response: %s', response.json())
 
-                if settings.smart_off:
-                    hue_next = requests.get(
-                        f'{hue_api()}/lights/{light.id}'
-                    ).json()
-                    hue_next_state = hue_next.get('state')
-                    light.smart_off_on = hue_next_state.get('on', null())
-                    light.smart_off_bri = hue_next_state.get('bri', null())
-                    light.smart_off_ct = hue_next_state.get('ct', null())
+        if settings.smart_off:
+            for light in lights:
+                hue_next = requests.get(
+                    f'{api}/lights/{light.id}'
+                ).json()
+                hue_next_state = hue_next.get('state')
+                light.smart_off_on = hue_next_state.get('on', null())
+                light.smart_off_bri = hue_next_state.get('bri', null())
+                light.smart_off_ct = hue_next_state.get('ct', null())
 
-            db.commit()
+                db.commit()
 
     else:
         log.debug('disabled')
@@ -167,11 +171,12 @@ def run(disable=False):
 
             for light in lights:
                 response = requests.put(
-                    f'{hue_api()}/lights/{light.id}/state',
+                    f'{api}/lights/{light.id}/state',
                     json={'on': False}
                 )
                 log.debug(response.json())
     db.close()
+    calc_curve_value.cache_clear()
 
 
 def reset_offsets():
@@ -192,3 +197,7 @@ def reset_offsets():
     db.close()
 
     log.info('Reset offset for %s curves', len(curves))
+
+
+if __name__ == '__main__':
+    run()

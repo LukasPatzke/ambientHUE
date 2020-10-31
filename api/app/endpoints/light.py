@@ -44,6 +44,6 @@ async def update_light(
                     light.smart_off_bri = null()
                     light.smart_off_ct = null()
     db.commit()
-    run(disable=True)
+    run(disable=True, lights=[light])
 
     return light

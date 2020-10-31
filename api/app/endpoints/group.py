@@ -49,5 +49,5 @@ async def update_group(
         fire_webhook(group=group)
 
     db.commit()
-    run(disable=True)
+    run(disable=True, lights=group.lights)
     return group
