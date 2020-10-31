@@ -42,7 +42,7 @@ def calc_curve_value(
 
 
 def get_smart_off(light, prev_light_state):
-    
+
     smart_off_on = (
         (light.smart_off_on is not None) and
         (light.smart_off_on != prev_light_state.get('on'))

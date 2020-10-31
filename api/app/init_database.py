@@ -43,6 +43,6 @@ def init():
         models.Point(x=1080, y=475, curve=ct_curve)
         models.Point(x=1440, y=500, last=True, curve=ct_curve)
         db.add(ct_curve)
-        
+
     db.commit()
     db.close()
