@@ -13,7 +13,7 @@ import requests
 log = logging.getLogger(__name__)
 
 
-@lru_cache
+@lru_cache()
 def calc_curve_value(
     db: Session,
     curve: schemas.Curve,
