@@ -76,10 +76,10 @@ async def sync_with_bridge() -> Any:
 
 def sync() -> schemas.BridgeSync:
     db = SessionLocal()
-    models.Base.metadata.create_all(bind=engine)
+    api = hue_api()
 
-    hue_lights = requests.get(f'{hue_api()}/lights').json()
-    hue_groups = requests.get(f'{hue_api()}/groups').json()
+    hue_lights = requests.get(f'{api}/lights').json()
+    hue_groups = requests.get(f'{api}/groups').json()
 
     lights = {light.id: light for light in db.query(models.Light).all()}
     groups = {groups.id: groups for groups in db.query(models.Group).all()}
@@ -100,7 +100,7 @@ def sync() -> schemas.BridgeSync:
         light.productname = hue_light['productname']
 
     for light_id, light in lights.items():
-        if light_id not in hue_lights:
+        if str(light_id) not in hue_lights:
             db.delete(light)
     db.commit()
 
@@ -116,7 +116,7 @@ def sync() -> schemas.BridgeSync:
         )
 
     for group_id, group in groups.items():
-        if group_id not in hue_groups:
+        if str(group_id) not in hue_groups:
             db.delete(group)
     db.commit()
     db.close()
