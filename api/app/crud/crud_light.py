@@ -35,9 +35,6 @@ class CRUDLight(CRUDBase[Light, LightCreate, LightUpdate]):
                 setattr(light, field, update_data[field])
                 if field == 'on':
                     webhook.fire(light=light)
-        db.add(light)
-        db.commit()
-        db.refresh(light)
 
         if update_data.get('on') is False:
             light = self.reset_smart_off(db, api, light=light)
@@ -58,8 +55,6 @@ class CRUDLight(CRUDBase[Light, LightCreate, LightUpdate]):
         light.smart_off_bri = hue_state.get('bri', null())
         light.smart_off_ct = hue_state.get('ct', null())
 
-        db.commit()
-        db.refresh(light)
         return light
 
     def count(self, db: Session) -> int:

@@ -135,6 +135,7 @@ def run(disable=False, lights=None):
                     json={'on': False}
                 )
                 log.debug(response.json())
+    db.commit()
     db.close()
     crud.curve.calc_value.cache_clear()
 
@@ -153,6 +154,7 @@ def reset_offsets():
     lights = crud.lights.get_multi(db)
     for light in lights:
         crud.light.reset_smart_off(db, api, light=light)
+    db.commit()
     log.info('Reset smart off for %s lights', len(lights))
 
     db.close()
