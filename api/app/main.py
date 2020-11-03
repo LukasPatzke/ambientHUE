@@ -5,13 +5,8 @@ from fastapi.staticfiles import StaticFiles
 from starlette.responses import RedirectResponse
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from app import models
-from app.database import SessionLocal, engine
-from app import endpoints
-from app import schedules
+from app import endpoints, schedules
 from app.init_database import init
-
-models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
@@ -23,15 +18,6 @@ app.add_middleware(
     allow_headers=["*"],
     allow_credentials=True,
 )
-
-
-# Dependency
-def get_db():
-    try:
-        db = SessionLocal()
-        yield db
-    finally:
-        db.close()
 
 
 api = FastAPI(
@@ -77,11 +63,6 @@ api.include_router(
     tags=['webhooks']
 )
 api.include_router(
-    endpoints.header.router,
-    prefix='/headers',
-    tags=['webhooks']
-)
-api.include_router(
     endpoints.settings.router,
     prefix='/settings',
     tags=['settings']
@@ -103,4 +84,10 @@ job_offsets = scheduler.add_job(
 scheduler.start()
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8080, log_level="debug")
+    uvicorn.run(
+        "app.main:app",
+        host="0.0.0.0",
+        port=8080,
+        log_level="debug",
+        reload=True
+    )

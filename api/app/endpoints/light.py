@@ -1,11 +1,10 @@
 from typing import Any, List
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from sqlalchemy.sql import null
-from app import models, schemas
+from app import schemas, crud
 from app.database import get_db
+from app.api import get_api, ServerSession
 from app.schedules import run
-from app.endpoints.webhook import fire_webhook
 
 router = APIRouter()
 
@@ -14,7 +13,7 @@ router = APIRouter()
 async def get_all_lights(
     db: Session = Depends(get_db)
 ) -> Any:
-    return db.query(models.Light).all()
+    return crud.light.get_multi(db)
 
 
 @router.get('/{id}', response_model=schemas.Light)
@@ -22,28 +21,19 @@ async def get_light(
     id: int,
     db: Session = Depends(get_db)
 ) -> Any:
-    return db.query(models.Light).get(id)
+    return crud.light.get(db, id=id)
 
 
 @router.put('/{id}', response_model=schemas.Light)
 async def update_light(
     id: int,
     light_in: schemas.LightUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    api: ServerSession = Depends(get_api),
 ) -> Any:
-    light = db.query(models.Light).get(id)
+    light = crud.light.get(db, id=id)
+    light = crud.light.update(db, api, light=light, light_in=light_in)
 
-    for attr, value in light_in.dict().items():
-        if value is not None:
-            setattr(light, attr, value)
-            if attr == 'on':
-                fire_webhook(light=light)
-
-                if not value:
-                    light.smart_off_on = null()
-                    light.smart_off_bri = null()
-                    light.smart_off_ct = null()
-    db.commit()
     run(disable=True, lights=[light])
 
     return light

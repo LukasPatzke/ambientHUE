@@ -1,11 +1,10 @@
 from typing import Any, List
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from app import models, schemas
+from app import models, schemas, crud
 from app.database import get_db, SessionLocal, engine
+from app.api import get_api, ServerSession
 import requests
-import socket
-import time
 import logging
 
 log = logging.getLogger(__name__)
@@ -17,51 +16,17 @@ router = APIRouter()
 async def get_bridge(
     db: Session = Depends(get_db)
 ) -> Any:
-    return db.query(models.Bridge).first()
+    return crud.bridge.get(db)
 
 
 @router.post('/', response_model=schemas.BridgeSync)
 async def create_bridge(
     bridge_in: schemas.BridgeCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    api: ServerSession = Depends(get_api)
 ) -> Any:
 
-    counter = 0
-    while counter < 100:
-        response = requests.post(
-            f'http://{bridge_in.ipaddress}/api',
-            json={'devicetype': f'hue_dimmer#{socket.gethostname()}'}
-        ).json()
-        log.info(response)
-        if response[0].get('success'):
-            break
-        time.sleep(1)
-        counter += 1
-
-    if not response[0].get('success'):
-        raise HTTPException(
-            status_code=500,
-            detail=response
-        )
-
-    username = response[0]['success']['username']
-    info = requests.get(
-        f'http://{bridge_in.ipaddress}/api/{username}/config'
-    ).json()
-    log.info(info)
-    bridge = db.query(models.Bridge).first()
-    new_bridge = models.Bridge(
-        id=info.get('bridgeid'),
-        name=info.get('name'),
-        ipaddress=info.get('ipaddress'),
-        username=username
-    )
-    db.add(new_bridge)
-    if bridge:
-        db.delete(bridge)
-    db.commit()
-
-    return sync()
+    return crud.bridge.create(db, api, bridge_in=bridge_in)
 
 
 @router.get('/discover', response_model=List[schemas.BridgeDiscovery])
@@ -70,8 +35,11 @@ async def discover_bridges() -> Any:
 
 
 @router.get('/sync', response_model=schemas.BridgeSync)
-async def sync_with_bridge() -> Any:
-    return sync()
+async def sync_with_bridge(
+    db: Session = Depends(get_db),
+    api: ServerSession = Depends(get_api)
+) -> Any:
+    return crud.bridge.sync(db, api)
 
 
 def sync() -> schemas.BridgeSync:

@@ -6,7 +6,6 @@ from app.endpoints import bridge
 from app.endpoints import light
 from app.endpoints import group
 from app.endpoints import webhook
-from app.endpoints import header
 from app.endpoints import settings
 
 __all__ = [
@@ -17,6 +16,5 @@ __all__ = [
     light,
     group,
     webhook,
-    header,
     settings
 ]

@@ -1,4 +1,4 @@
-from app import models
+from app import models, crud
 from app.database import SessionLocal, engine
 
 
@@ -7,20 +7,21 @@ def init():
 
     models.Base.metadata.create_all(bind=engine)
 
-    status = db.query(models.Status).first()
+    status = crud.status.get(db)
     if not status:
-        status = models.Status(id=0, status=False)
-        db.add(status)
+        crud.status.create(db, obj_in={
+            'id': 0,
+            'status': False
+        })
 
-    settings = db.query(models.Settings).first()
+    settings = crud.settings.get(db)
     if not settings:
-        settings = models.Settings(id=0, smart_off=True)
-        db.add(settings)
+        crud.settings.create(db, obj_in={
+            'id': 0,
+            'smart_off': True
+        })
 
-    bri_curve = (db.query(models.Curve)
-                   .filter_by(default=True)
-                   .filter_by(kind='bri')
-                   .first())
+    bri_curve = crud.curve.get_default_by_kind(db, kind='bri')
     if not bri_curve:
         bri_curve = models.Curve(name='Default', kind='bri', default=True)
         models.Point(x=0, y=245, first=True, curve=bri_curve)
@@ -31,10 +32,7 @@ def init():
         models.Point(x=1440, y=12, last=True, curve=bri_curve)
         db.add(bri_curve)
 
-    ct_curve = (db.query(models.Curve)
-                  .filter_by(default=True)
-                  .filter_by(kind='ct')
-                  .first())
+    ct_curve = crud.curve.get_default_by_kind(db, kind='ct')
     if not ct_curve:
         ct_curve = models.Curve(name='Default', kind='ct', default=True)
         models.Point(x=0, y=153, first=True, curve=ct_curve)
