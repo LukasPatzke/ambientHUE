@@ -35,10 +35,13 @@ def get_smart_off(light, prev_light_state):
         (light.smart_off_bri is not None) and
         (light.smart_off_bri != prev_light_state.get('bri'))
     )
-    smart_off_ct = (
-        (light.smart_off_ct is not None) and
-        (light.smart_off_ct != prev_light_state.get('ct'))
-    )
+    if prev_light_state.get('ct') is None:
+        smart_off_ct = None
+    else:
+        smart_off_ct = (
+            (light.smart_off_ct is not None) and
+            (light.smart_off_ct != prev_light_state.get('ct'))
+        )
 
     return smart_off_on or smart_off_bri or smart_off_ct
 

@@ -1,11 +1,9 @@
 from app import models, crud
-from app.database import SessionLocal, engine
+from app.database import SessionLocal
 
 
 def init():
     db = SessionLocal()
-
-    models.Base.metadata.create_all(bind=engine)
 
     status = crud.status.get(db)
     if not status:
