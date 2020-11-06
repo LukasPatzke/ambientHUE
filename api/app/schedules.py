@@ -151,7 +151,7 @@ def reset_offsets():
         })
     log.info('Reset offset for %s curves', len(curves))
 
-    lights = crud.lights.get_multi(db)
+    lights = crud.light.get_multi(db)
     for light in lights:
         crud.light.reset_smart_off(db, api, light=light)
     db.commit()
