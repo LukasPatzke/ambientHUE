@@ -10,7 +10,7 @@ RUN apk add --no-cache --virtual .build-deps gcc libc-dev make \
 
 EXPOSE 8080
 
-COPY ./api/app /opt/api/app
+COPY ./api /opt/api
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -25,8 +25,8 @@ LABEL maintainer="LukasPatzke" \
   org.opencontainers.image.title="ambientHUE" \
   org.opencontainers.image.licenses="MIT"
 
-HEALTHCHECK --timeout=3s \
-  CMD curl -f http://localhost:8080/api/status/ || exit 1
+HEALTHCHECK --timeout=3s --interval=10s \
+  CMD curl -s -f http://localhost:8080/api/status/ || exit 1
 
 ENV PYTHONPATH=/opt/api
 ENTRYPOINT ["entrypoint.sh"]
