@@ -28,4 +28,4 @@ LABEL maintainer="LukasPatzke" \
 HEALTHCHECK --timeout=3s \
   CMD curl -f http://localhost:8080/api/status/ || exit 1
 
-ENTRYPOINT ["gunicorn", "app.main:app", "-b", "0.0.0.0:8080", "-w", "4", "-k", "uvicorn.workers.UvicornWorker",  "--preload", "--log-file", "-", "--access-logfile=", "-"]
+ENTRYPOINT ["gunicorn", "app.main:app", "-b", "0.0.0.0:8080", "-w", "4", "-k", "uvicorn.workers.UvicornWorker",  "--preload", "--log-file=-", "--access-logfile=-"]

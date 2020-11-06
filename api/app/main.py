@@ -25,6 +25,11 @@ else:
     fastapi_logger.setLevel(logging.DEBUG)
 
 
+@app.on_event('startup')
+def startup_event():
+    schedules.reset_smart_off()
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -90,12 +95,12 @@ init()
 
 scheduler = BackgroundScheduler()
 job_run = scheduler.add_job(
-    schedules.run, trigger='interval', minutes=1
+    schedules.scheduled_run, trigger='interval', minutes=1
 )
 job_offsets = scheduler.add_job(
     schedules.reset_offsets, trigger='cron', hour=4
 )
-scheduler.start()
+# scheduler.start()
 
 if __name__ == "__main__":
     uvicorn.run(

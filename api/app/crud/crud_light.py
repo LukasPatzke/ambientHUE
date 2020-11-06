@@ -36,9 +36,8 @@ class CRUDLight(CRUDBase[Light, LightCreate, LightUpdate]):
                 if field == 'on':
                     webhook.fire(light=light)
 
-        if update_data.get('on') is False:
+        if update_data.get('on') is not None:
             light = self.reset_smart_off(db, api, light=light)
-
         return light
 
     def reset_smart_off(

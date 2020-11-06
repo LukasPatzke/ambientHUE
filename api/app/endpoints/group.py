@@ -35,11 +35,10 @@ async def update_group(
 
     for light in group.lights:
         crud.light.update(db, api,  light=light, light_in=light_in)
-    db.commit()
+    
     if light_in.on is not None:
         crud.webhook.fire(group=group)
 
-    run(disable=True, lights=group.lights)
-
-    db.refresh(group)
+    run(disable=True, lights=group.lights, db=db, api=api)
+    db.commit()
     return group

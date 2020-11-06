@@ -72,12 +72,10 @@ def get_request_body(db, light, prev_light_state):
     return body
 
 
-def run(disable=False, lights=None):
+def run(disable=False, lights=None, db=None, api=None):
     """ Calculate and execute the current state"""
-    db = SessionLocal()
 
     status = crud.status.get(db)
-    api = next(get_api(db))
     if status.status:
         settings = crud.settings.get(db)
 
@@ -116,12 +114,9 @@ def run(disable=False, lights=None):
                     json=body
                 )
                 log.debug('response: %s', response.json())
-
-        if settings.smart_off:
-            for light in lights:
-                smart_off = get_smart_off(light, prev_light_state)
-                if not smart_off:
+                if settings.smart_off:
                     crud.light.reset_smart_off(db, api, light=light)
+                    # db.commit()
 
     else:
         log.debug('disabled')
@@ -135,14 +130,17 @@ def run(disable=False, lights=None):
                     json={'on': False}
                 )
                 log.debug(response.json())
-    db.commit()
-    db.close()
     crud.curve.calc_value.cache_clear()
+
+
+def scheduled_run():
+    db = SessionLocal()
+    api = next(get_api(db))
+    run(db=db, api=api)
 
 
 def reset_offsets():
     db = SessionLocal()
-    api = next(get_api(db))
 
     curves = crud.curve.get_multi(db)
     for curve in curves:
@@ -151,12 +149,17 @@ def reset_offsets():
         })
     log.info('Reset offset for %s curves', len(curves))
 
+    reset_smart_off()
+
+
+def reset_smart_off():
+    db = SessionLocal()
+    api = next(get_api(db))
     lights = crud.light.get_multi(db)
     for light in lights:
         crud.light.reset_smart_off(db, api, light=light)
     db.commit()
     log.info('Reset smart off for %s lights', len(lights))
-
     db.close()
 
 

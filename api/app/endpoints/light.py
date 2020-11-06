@@ -33,8 +33,8 @@ async def update_light(
 ) -> Any:
     light = crud.light.get(db, id=id)
     light = crud.light.update(db, api, light=light, light_in=light_in)
+    run(disable=True, lights=[light], db=db, api=api)
+    db.add(light)
     db.commit()
-
-    run(disable=True, lights=[light])
-
+    db.refresh(light)
     return light
