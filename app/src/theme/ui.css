@@ -264,6 +264,12 @@ ion-router-outlet,
     /* padding-right: 10px; */
 }
 
+.lp-tile-smart-off-icon {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+
 /* transparent Button */
 ion-button.transparent {
     --opacity: 0.8;

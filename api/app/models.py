@@ -115,6 +115,7 @@ class Light(Base):
     smart_off_on = Column(Boolean)
     smart_off_bri = Column(Integer)
     smart_off_ct = Column(Integer)
+    smart_off_active = Column(Boolean, default=False)
 
     bri_curve_id = Column(Integer, ForeignKey('curve.id'))
     ct_curve_id = Column(Integer, ForeignKey('curve.id'))

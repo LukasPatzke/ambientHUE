@@ -37,6 +37,7 @@
             "disabled": "Inaktiv",
             "on": "Ein",
             "off": "Aus",
+            "smart_off": "Smart Off",
             "favorites": "Favoriten",
             "add_favorites": "Favoriten hinzufügen"
         },

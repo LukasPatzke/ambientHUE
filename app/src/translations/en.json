@@ -36,7 +36,8 @@
             "enabled": "Enabled",
             "disabled": "Disabled",
             "on": "On",
-            "off": "Off"
+            "off": "Off",
+            "smart_off": "Smart Off"
         },
         "serviceWorker": {
             "initialized": "Page has been saved for offline use.",

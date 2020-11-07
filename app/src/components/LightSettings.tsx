@@ -4,7 +4,7 @@ import { IonList, IonLabel, IonIcon, IonItem, IonToggle } from '@ionic/react';
 import { Range } from './Range';
 import { debounce } from 'lodash';
 import { ILight, ILightUpdate } from '../types/hue';
-import { sunny, add, remove } from 'ionicons/icons';
+import { sunny, add, remove, colorWand } from 'ionicons/icons';
 import { isLightCtControlled, isLightBriControlled } from './LightList';
 
 
@@ -14,7 +14,7 @@ interface ILightSettingsProps {
 }
 
 export const LightSettings: React.FC<ILightSettingsProps> = ({light, onChange}) => {
-  const { t } = useTranslation('lights');
+  const { t } = useTranslation(['lights', 'common']);
   const onBrightnessMaxChange = debounce((value:number)=>(
     onChange({bri_max: value} as ILightUpdate)), 250);
   const onThresholdChange = debounce((value:number)=>(
@@ -22,6 +22,12 @@ export const LightSettings: React.FC<ILightSettingsProps> = ({light, onChange}) 
   
   return (
     <IonList inset>
+      {light.smart_off_active?
+        <IonItem color='primary'>
+          <IonLabel>{t('common:settings.smart_off')}</IonLabel>
+          <IonIcon icon={colorWand}/>
+        </IonItem>
+      :undefined}
       <IonItem>
         <IonLabel>{t('settings.on')}</IonLabel>
         <IonToggle 

@@ -92,9 +92,9 @@ def run(disable=False, lights=None, db=None, api=None):
             prev_light_state = hue_prev.get(str(light.id)).get('state')
 
             if settings.smart_off:
-                smart_off = get_smart_off(light, prev_light_state)
+                light = crud.light.get_smart_off(light, prev_light_state)
 
-                if smart_off:
+                if light.smart_off_active:
                     log.debug(
                         'skipping request, Smart Off for light %s',
                         light.id
@@ -135,6 +135,7 @@ def run(disable=False, lights=None, db=None, api=None):
                 )
                 log.debug(response)
     crud.curve.calc_value.cache_clear()
+    db.commit()
 
 
 def scheduled_run():

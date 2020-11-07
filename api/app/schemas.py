@@ -138,6 +138,7 @@ class LightBase(BaseModel):
     manufacturername: str
     productname: str
     on: bool
+    smart_off_active: bool
 
 
 class LightUpdate(BaseModel):
