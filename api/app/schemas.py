@@ -77,9 +77,13 @@ class WebhookBase(BaseModel):
     method: Optional[str]
 
 
-class WebhookUpdate(WebhookBase):
+class WebhookCreate(WebhookBase):
     lights: Optional[List[int]]
     groups: Optional[List[int]]
+
+
+class WebhookUpdate(WebhookCreate):
+    pass
 
 
 class Webhook(WebhookBase):
@@ -115,6 +119,10 @@ class SettingsUpdate(SettingsBase):
     pass
 
 
+class SettingsCreate(SettingsBase):
+    pass
+
+
 class Settings(SettingsBase):
     id: int
 
@@ -133,6 +141,12 @@ class LightBase(BaseModel):
 
 
 class LightUpdate(BaseModel):
+    id: Optional[int]
+    name: Optional[str]
+    type: Optional[str]
+    modelid: Optional[str]
+    manufacturername: Optional[str]
+    productname: Optional[str]
     on: Optional[bool]
     on_controlled: Optional[bool]
     on_threshold: Optional[float]
@@ -141,6 +155,10 @@ class LightUpdate(BaseModel):
     bri_max: Optional[float]
     bri_curve_id: Optional[int]
     ct_curve_id: Optional[int]
+
+
+class LightCreate(LightBase):
+    pass
 
 
 class LightInfo(LightBase):
@@ -162,9 +180,16 @@ class Light(LightBase):
 
 
 class GroubBase(BaseModel):
-    id: int
     name: str
     type: str
+
+
+class GroupCreate(GroubBase):
+    id: int
+
+
+class GroupUpdate(GroubBase):
+    pass
 
 
 class GroupInfo(BaseModel):
@@ -196,6 +221,10 @@ class PositionUpdate(BaseModel):
     visible: bool
 
 
+class PositionCreate(BaseModel):
+    visible: bool
+
+
 class PositionMove(BaseModel):
     move_from: int
     move_to: int
@@ -215,6 +244,10 @@ class BridgeBase(BaseModel):
 
 
 class BridgeCreate(BridgeBase):
+    pass
+
+
+class BridgeUpdate(BridgeBase):
     pass
 
 

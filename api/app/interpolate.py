@@ -4,15 +4,16 @@ Interpolation
 
 import math
 
+
 def monospline(xs, ys):
     """
     Monotone cubic interpolation
     """
     # Deal with length issues
     length = len(xs)
-    if length != len(ys): 
+    if length != len(ys):
         raise ValueError('Need an equal count of xs and ys')
-    if length == 0: 
+    if length == 0:
         return lambda x: 0
     if length == 1:
         return lambda x: ys[0]
@@ -20,7 +21,7 @@ def monospline(xs, ys):
     # Rearrange xs and ys so that xs is sorted
     old_xs, old_ys = xs, ys
     xs = sorted(old_xs)
-    ys = [y for _,y in sorted(zip(old_xs, old_ys))]
+    ys = [y for _, y in sorted(zip(old_xs, old_ys))]
 
     # Get consecutive differences and slopes
     dys = []
@@ -32,7 +33,7 @@ def monospline(xs, ys):
         dxs.append(dx)
         dys.append(dy)
         ms.append(dy/dx)
-    
+
     # Get degree-1 coefficients
     cls = [ms[0]]
     for i in range(len(dxs)-1):
@@ -44,7 +45,9 @@ def monospline(xs, ys):
             dx_ = dxs[i]
             dx_next = dxs[i+1]
             common = dx_ + dx_next
-            cls.append(3 * common / ((common + dx_next)/m + (common + dx_) / m_next))
+            cls.append(
+                3 * common / ((common + dx_next)/m + (common + dx_) / m_next)
+            )
     cls.append(ms[-1])
 
     # Get degree-2 and degree-3 coefficients
@@ -61,10 +64,11 @@ def monospline(xs, ys):
     # Return interpolant function
     def interpolant(x):
         # The rightmost point in the dataset should give an exact result
-        if x == xs[-1]: 
+        if x == xs[-1]:
             return ys[-1]
 
-        # Search for the interval x is in, returning the corresponding y if x is one of the original xs
+        # Search for the interval x is in, returning the corresponding y if x
+        # is one of the original xs
         low = 0
         high = len(c3s) - 1
         while low <= high:
@@ -84,4 +88,3 @@ def monospline(xs, ys):
         return ys[i] + cls[i]*diff + c2s[i]*diff**2 + c3s[i]*diff**3
 
     return interpolant
-  

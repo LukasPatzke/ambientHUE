@@ -1,46 +1,33 @@
-from typing import Optional
-from app import models, schemas
-from app.database import SessionLocal, engine
-from app.endpoints.bridge import hue_api
-from app.interpolate import monospline
+from fastapi import HTTPException
+from app import models, crud
+from app.database import SessionLocal
+from app.api import get_api
 from sqlalchemy.orm import Session
-from sqlalchemy.sql import null
-import datetime as dt
 import logging
-import requests
+
 
 log = logging.getLogger(__name__)
 
 
-def calc_curve_value(
-    db: Session,
-    curve: schemas.Curve,
-    x: Optional[int] = None
-) -> int:
-    """ Calculate the value from the points"""
-    points = (db.query(models.Point)
-                .with_parent(curve)
-                .order_by(models.Point.x)
-                .all())
+def calc_brightness(db: Session, light: models.Light):
+    """ Calculate the current brightness for a light. """
+    curve = light.bri_curve
+    if not curve:
+        curve = crud.curve.get_default_by_kind(db, kind='bri')
+    curve_value = crud.curve.calc_value(db=db, curve=curve)
+    return int((light.bri_max/254) * curve_value)
 
-    if x is None:
-        now = dt.datetime.now()
-        x = int((now - now.replace(hour=0,
-                                   minute=0,
-                                   second=0,
-                                   microsecond=0)).total_seconds() / 60) - 4*60
 
-    cs = monospline(
-        xs=[point.x for point in points],
-        ys=[point.y + curve.offset for point in points],
-    )
-
-    value = int(cs(x))
-    return value
+def calc_color_temp(db: Session, light: models.Light):
+    """ Calculate the current color temperature for a light. """
+    curve = light.ct_curve
+    if not curve:
+        curve = crud.curve.get_default_by_kind(db, kind='ct')
+    return crud.curve.calc_value(db=db, curve=curve)
 
 
 def get_smart_off(light, prev_light_state):
-    
+    """ Calculate the smart of state. """
     smart_off_on = (
         (light.smart_off_on is not None) and
         (light.smart_off_on != prev_light_state.get('on'))
@@ -49,56 +36,57 @@ def get_smart_off(light, prev_light_state):
         (light.smart_off_bri is not None) and
         (light.smart_off_bri != prev_light_state.get('bri'))
     )
-    smart_off_ct = (
-        (light.smart_off_ct is not None) and
-        (light.smart_off_ct != prev_light_state.get('ct'))
-    )
+    if prev_light_state.get('ct') is None:
+        smart_off_ct = None
+    else:
+        smart_off_ct = (
+            (light.smart_off_ct is not None) and
+            (light.smart_off_ct != prev_light_state.get('ct'))
+        )
 
     return smart_off_on or smart_off_bri or smart_off_ct
 
 
-def get_request_body(db, light):
+def get_request_body(db, light, prev_light_state):
+    """ Build the request body for the hue api."""
     body = {}
 
-    brightness = calc_curve_value(db=db, curve=light.bri_curve)
-    color_temp = calc_curve_value(db=db, curve=light.ct_curve)
+    brightness = calc_brightness(db=db, light=light)
+    color_temp = calc_color_temp(db=db, light=light)
 
     if light.ct_controlled:
         body['ct'] = color_temp
+    if light.bri_controlled:
+        body['bri'] = brightness
+    if light.on_controlled:
+        if light.on is False:
+            body['on'] = False
+        elif brightness > light.on_threshold:
+            body['on'] = True
+        else:
+            body['on'] = False
 
-    light_brightness = (light.bri_max/254) * brightness
-    if light_brightness > 0:
-        if light.bri_controlled:
-            body['bri'] = int(light_brightness)
-        if light.on_controlled:
-            if light.on is False:
-                body['on'] = False
-            elif light_brightness > light.on_threshold:
-                body['on'] = True
-            else:
-                body['on'] = False
-    elif light.on_controlled:
-        body['on'] = False
+    if body.get('on') is False:
+        return {'on': False}
 
+    # Signify recommends to not resent the 'on' value
+    if body.get('on') == prev_light_state.get('on'):
+        del body['on']
+    log.debug('body: %s', body)
     return body
 
 
-def run(disable=False):
+def run(disable=False, lights=None, db=None, api=None):
     """ Calculate and execute the current state"""
-    db = SessionLocal()
-    models.Base.metadata.create_all(bind=engine)
 
-    status = db.query(models.Status).first()
+    status = crud.status.get(db)
     if status.status:
-        settings = db.query(models.Settings).first()
+        settings = crud.settings.get(db)
 
-        hue_prev = requests.get(f'{hue_api()}/lights').json()
-        lights = db.query(models.Light).all()
+        hue_prev = api.get('/lights')
 
-        bri_default = (db.query(models.Curve).filter_by(default=True)
-                                             .filter_by(kind='bri').first())
-        ct_default = (db.query(models.Curve).filter_by(default=True)
-                                            .filter_by(kind='ct').first())
+        if not lights:
+            lights = crud.light.get_multi(db)
 
         for light in lights:
             prev_light_state = hue_prev.get(str(light.id)).get('state')
@@ -113,82 +101,93 @@ def run(disable=False):
                     )
                     continue
 
-            body = {}
-
-            bri_curve = light.bri_curve or bri_default
-            ct_curve = light.ct_curve or ct_default
-
-            brightness = calc_curve_value(db=db, curve=bri_curve)
-            color_temp = calc_curve_value(db=db, curve=ct_curve)
-
-            if light.ct_controlled:
-                body['ct'] = color_temp
-
-            light_brightness = (light.bri_max/254) * brightness
-            if light_brightness > 0:
-                if light.bri_controlled:
-                    body['bri'] = int(light_brightness)
-                if light.on_controlled:
-                    if light.on is False:
-                        body['on'] = False
-                    elif light_brightness > light.on_threshold:
-                        body['on'] = True
-                    else:
-                        body['on'] = False
-            elif light.on_controlled:
-                body['on'] = False
+            body = get_request_body(
+                db=db,
+                light=light,
+                prev_light_state=prev_light_state
+            )
 
             if body == {}:
-                log.debug('skipping request, empty body')
-            if not (body.get('on') or (prev_light_state.get('on'))):
-                log.debug('skipping request, light %s is off', light.id)
+                log.debug(
+                    'skipping request, empty body for light %s.',
+                    light.id
+                )
             else:
-                response = requests.put(
-                    f'{hue_api()}/lights/{light.id}/state',
+                response = api.put(
+                    f'/lights/{light.id}/state',
                     json=body
                 )
-                log.debug('response: %s', response.json())
-
+                log.debug('response: %s', response)
                 if settings.smart_off:
-                    hue_next = requests.get(
-                        f'{hue_api()}/lights/{light.id}'
-                    ).json()
-                    hue_next_state = hue_next.get('state')
-                    light.smart_off_on = hue_next_state.get('on', null())
-                    light.smart_off_bri = hue_next_state.get('bri', null())
-                    light.smart_off_ct = hue_next_state.get('ct', null())
-
-            db.commit()
+                    crud.light.reset_smart_off(db, api, light=light)
+                    # db.commit()
 
     else:
         log.debug('disabled')
         if disable:
-            lights = db.query(models.Light).filter_by(on_controlled=True).all()
+            if not lights:
+                lights = crud.light.get_multi_controlled(db)
 
             for light in lights:
-                response = requests.put(
-                    f'{hue_api()}/lights/{light.id}/state',
+                response = api.put(
+                    f'/lights/{light.id}/state',
                     json={'on': False}
                 )
-                log.debug(response.json())
-    db.close()
+                log.debug(response)
+    crud.curve.calc_value.cache_clear()
+
+
+def scheduled_run():
+    try:
+        db = SessionLocal()
+        api = get_api(db)
+        run(db=db, api=api)
+    except HTTPException as e:
+        log.error(e.detail)
+
+
+def scheduled_daily_cleanup():
+    reset_offsets()
+    reset_smart_off()
 
 
 def reset_offsets():
     db = SessionLocal()
-    models.Base.metadata.create_all(bind=engine)
 
-    curves = db.query(models.Curve).filter(models.Curve.offset != 0).all()
+    curves = crud.curve.get_multi(db)
     for curve in curves:
-        curve.offset = 0
-
-    lights = db.query(models.Light).all()
-    for light in lights:
-        light.smart_off_on = null()
-        light.smart_off_bri = null()
-        light.smart_off_ct = null()
-
-    db.commit()
+        try:
+            crud.curve.update(db, db_obj=curve, obj_in={
+                'offset': 0
+            })
+        except HTTPException as e:
+            log.error(e.detail)
+    log.info('Reset offset for %s curves', len(curves))
     db.close()
 
-    log.info('Reset offset for %s curves', len(curves))
+
+def reset_smart_off():
+    db = SessionLocal()
+    api = get_api(db)
+    lights = crud.light.get_multi(db)
+    for light in lights:
+        try:
+            crud.light.reset_smart_off(db, api, light=light)
+        except HTTPException as e:
+            log.error(e.detail)
+    db.commit()
+    log.info('Reset smart off for %s lights', len(lights))
+    db.close()
+
+
+def scheduled_sync():
+    try:
+        db = SessionLocal()
+        api = get_api(db)
+        log.info(crud.bridge.sync(db, api))
+    except HTTPException as e:
+        log.error(e.detail)
+
+
+if __name__ == '__main__':
+    run()

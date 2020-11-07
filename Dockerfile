@@ -1,16 +1,18 @@
-FROM python:3.7-alpine3.8
+FROM python:3.8-alpine3.10
 
-COPY ./api/requirements.txt /opt/api/requirements.txt
-WORKDIR /opt/api
+COPY ./api/requirements.txt /app/requirements.txt
+WORKDIR /app/
 
 RUN apk add --no-cache --virtual .build-deps gcc libc-dev make \
     && pip install --no-cache-dir -r requirements.txt \
     && apk del .build-deps gcc libc-dev make \
-    && apk add tzdata
+    && apk add tzdata curl
 
-EXPOSE 8080
+COPY ./start.sh /start.sh
+RUN chmod +x /start.sh
 
-COPY ./api /opt/api
+COPY ./gunicorn_conf.py /gunicorn_conf.py
+COPY ./api /app
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -25,5 +27,13 @@ LABEL maintainer="LukasPatzke" \
   org.opencontainers.image.title="ambientHUE" \
   org.opencontainers.image.licenses="MIT"
 
+HEALTHCHECK --timeout=3s --interval=10s \
+  CMD curl -s -f http://localhost/api/status/ || exit 1
 
-ENTRYPOINT ["gunicorn", "app.main:app", "-b", "0.0.0.0:8080", "-w", "4", "-k", "uvicorn.workers.UvicornWorker",  "--preload"]
+EXPOSE 80
+
+ENV PYTHONPATH=/app
+
+# Run the start script, it will check for an /app/prestart.sh script (e.g. for migrations)
+# And then will start Gunicorn with Uvicorn
+CMD ["/start.sh"]

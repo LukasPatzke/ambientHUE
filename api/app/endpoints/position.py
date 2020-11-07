@@ -1,7 +1,7 @@
 from typing import Any, List
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from app import models, schemas
+from app import schemas, crud
 from app.database import get_db
 
 router = APIRouter()
@@ -11,9 +11,7 @@ router = APIRouter()
 async def get_all_positions(
     db: Session = Depends(get_db)
 ) -> Any:
-    return (db.query(models.Position)
-              .order_by(models.Position.position)
-              .all())
+    return crud.position.get_multi(db)
 
 
 @router.put('/', response_model=List[schemas.Position])
@@ -21,20 +19,7 @@ async def move_position(
     move: schemas.PositionMove,
     db: Session = Depends(get_db)
 ) -> Any:
-    positions = (db.query(models.Position)
-                   .order_by(models.Position.position)
-                   .all())
-
-    position = positions.pop(move.move_from)
-    positions.insert(move.move_to, position)
-
-    for index, position in enumerate(positions):
-        position.position = index
-
-    db.commit()
-    return (db.query(models.Position)
-              .order_by(models.Position.position)
-              .all())
+    return crud.position.move(db, move=move)
 
 
 @router.put('/{id}', response_model=List[schemas.Position])
@@ -43,9 +28,6 @@ async def update_position(
     position_in: schemas.PositionUpdate,
     db: Session = Depends(get_db)
 ) -> Any:
-    position = db.query(models.Position).get(id)
-    position.visible = position_in.visible
-    db.commit()
-    return (db.query(models.Position)
-              .order_by(models.Position.position)
-              .all())
+    position = crud.position.get(db, id=id)
+    position = crud.position.update(db, db_obj=position, obj_in=position_in)
+    return crud.position.get_multi(db)

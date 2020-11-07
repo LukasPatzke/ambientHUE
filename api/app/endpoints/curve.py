@@ -1,9 +1,10 @@
 from typing import Any, List
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from app import models, schemas
+from app import schemas, crud
 from app.database import get_db
-from app.schedules import run, calc_curve_value
+from app.schedules import run
+from app.api import get_api, ServerSession
 
 router = APIRouter()
 
@@ -14,9 +15,9 @@ async def get_all_curves(
     db: Session = Depends(get_db)
 ) -> Any:
     if kind:
-        curves = db.query(models.Curve).filter_by(kind=kind).all()
+        curves = crud.curve.get_multi_by_kind(db, kind=kind)
     else:
-        curves = db.query(models.Curve).all()
+        curves = crud.curve.get_multi(db)
     return curves
 
 
@@ -25,23 +26,7 @@ async def create_curve(
     curve_in: schemas.CurveCreate,
     db: Session = Depends(get_db)
 ) -> Any:
-    curve = models.Curve(
-        name=curve_in.name,
-        kind=curve_in.kind,
-        offset=curve_in.offset,
-        default=False
-    )
-    models.Point(x=0, y=200, first=True, curve=curve)
-    models.Point(x=1440, y=200, last=True, curve=curve)
-    for index in range(1, curve_in.count - 1):
-        models.Point(
-            x=1440/(curve_in.count - 1) * index,
-            y=200,
-            curve=curve
-        )
-    db.add(curve)
-    db.commit()
-    return curve
+    return crud.curve.create(db, obj_in=curve_in)
 
 
 @router.get('/{id}', response_model=schemas.Curve)
@@ -49,39 +34,30 @@ async def get_curve(
     id: int,
     db: Session = Depends(get_db)
 ) -> Any:
-    return db.query(models.Curve).get(id)
+    return crud.curve.get(db, id=id)
 
 
 @router.put('/{id}', response_model=schemas.Curve)
 async def update_curve(
     id: int,
     curve_in: schemas.CurveUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    api: ServerSession = Depends(get_api)
 ) -> Any:
-    curve = db.query(models.Curve).get(id)
-    for attr, value in curve_in.dict().items():
-        if value is not None:
-            setattr(curve, attr, value)
-
-    db.commit()
-    run(disable=True)
+    curve = crud.curve.get(db, id=id)
+    curve = crud.curve.update(db, db_obj=curve, obj_in=curve_in)
+    run(disable=True, db=db, api=api)
     return curve
 
 
 @router.delete('/{id}', response_model=schemas.Curve)
 async def delete_curve(
     id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    api: ServerSession = Depends(get_api)
 ) -> Any:
-    curve = db.query(models.Curve).get(id)
-    if curve.default:
-        raise HTTPException(
-            status_code=422,
-            detail='Default curves are not deletable'
-        )
-    db.delete(curve)
-    db.commit()
-    run(disable=True)
+    curve = crud.curve.remove(db, id=id)
+    run(disable=True, db=db, api=api)
     return curve
 
 
@@ -90,76 +66,31 @@ async def insert_point(
     id: int,
     point_index: int,
     point_in: schemas.PointCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    api: ServerSession = Depends(get_api)
 ) -> Any:
-    curve = db.query(models.Curve).get(id)
-    points = (db.query(models.Point)
-                .with_parent(curve)
-                .order_by(models.Point.x)
-                .all())
-
-    point = points[point_index]
-
-    if point_in.position == 'after':
-        if point.last:
-            raise HTTPException(
-                status_code=422,
-                detail='Can not create Point after last Point'
-            )
-        new_x = calc_new_point_location(
-            before=points[point_index],
-            after=points[point_index + 1]
-        )
-    else:
-        if point.first:
-            raise HTTPException(
-                status_code=422,
-                detail='Can not create Point before first Point'
-            )
-        new_x = calc_new_point_location(
-            before=points[point_index-1],
-            after=points[point_index]
-        )
-
-    models.Point(
-        x=new_x,
-        y=calc_curve_value(db, curve, new_x),
-        curve=curve
+    curve = crud.curve.get(db, id=id)
+    curve = crud.curve.create_point(
+        db,
+        curve=curve,
+        point_index=point_index,
+        point_in=point_in
     )
-
-    db.commit()
-    run(disable=True)
-    return db.query(models.Curve).get(id)
+    run(disable=True, db=db, api=api)
+    return curve
 
 
 @router.delete('/{id}/{point_index}', response_model=schemas.Curve)
 async def delete_point(
     id: int,
     point_index: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    api: ServerSession = Depends(get_api)
 ) -> Any:
-    curve = db.query(models.Curve).get(id)
-    points = (db.query(models.Point)
-                .with_parent(curve)
-                .order_by(models.Point.x)
-                .all())
-
-    point = points[point_index]
-
-    if point.first:
-        raise HTTPException(
-            status_code=422,
-            detail='First Point is not deletable'
-        )
-    if point.last:
-        raise HTTPException(
-            status_code=422,
-            detail='Last Point is not deletable'
-        )
-    db.delete(point)
-    db.commit()
-    run(disable=True)
-    return db.query(models.Curve).get(id)
+    curve = crud.curve.get(db, id=id)
+    curve = crud.curve.delete_point(db, curve=curve, index=point_index)
+    run(disable=True, db=db, api=api)
+    return curve
 
 
 @router.put('/{id}/{point_index}', response_model=schemas.Curve)
@@ -167,29 +98,15 @@ async def update_point(
     id: int,
     point_index: int,
     point_in: schemas.PointUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    api: ServerSession = Depends(get_api)
 ) -> Any:
-    curve = db.query(models.Curve).get(id)
-    points = (db.query(models.Point)
-                .with_parent(curve)
-                .order_by(models.Point.x)
-                .all())
-
-    point = points[point_index]
-
-    point.x = point_in.x
-    point.y = point_in.y
-
-    db.commit()
-    run(disable=True)
-    return db.query(models.Curve).get(id)
-
-
-def calc_new_point_location(
-    before: schemas.Point,
-    after: schemas.Point
-) -> int:
-    """ Calculate the location of a new point between two existing points """
-    delta = abs(before.x - after.x)
-    basis = min([before.x, after.x])
-    return basis + delta/2
+    curve = crud.curve.get(db, id=id)
+    curve = crud.curve.update_point(
+        db,
+        curve=curve,
+        index=point_index,
+        point_in=point_in
+    )
+    run(disable=True, db=db, api=api)
+    return curve

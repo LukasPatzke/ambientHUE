@@ -1,19 +1,37 @@
+import logging
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
+from fastapi.logger import logger as fastapi_logger
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from starlette.responses import RedirectResponse
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from app import models
-from app.database import SessionLocal, engine
-from app import endpoints
-from app import schedules
+from app import endpoints, schedules
 from app.init_database import init
 
-models.Base.metadata.create_all(bind=engine)
-
 app = FastAPI()
+
+gunicorn_error_logger = logging.getLogger("gunicorn.error")
+gunicorn_logger = logging.getLogger("gunicorn")
+
+fastapi_logger.handlers = gunicorn_error_logger.handlers
+logging.root.handlers.extend(gunicorn_error_logger.handlers)
+logging.root.setLevel(gunicorn_error_logger.level)
+
+if __name__ != "__main__":
+    fastapi_logger.setLevel(gunicorn_logger.level)
+else:
+    fastapi_logger.setLevel(logging.DEBUG)
+
+
+@app.on_event('startup')
+def startup_event():
+    try:
+        schedules.reset_smart_off()
+        schedules.scheduled_sync()
+    except HTTPException as e:
+        fastapi_logger.warn(e)
 
 
 app.add_middleware(
@@ -23,15 +41,6 @@ app.add_middleware(
     allow_headers=["*"],
     allow_credentials=True,
 )
-
-
-# Dependency
-def get_db():
-    try:
-        db = SessionLocal()
-        yield db
-    finally:
-        db.close()
 
 
 api = FastAPI(
@@ -77,11 +86,6 @@ api.include_router(
     tags=['webhooks']
 )
 api.include_router(
-    endpoints.header.router,
-    prefix='/headers',
-    tags=['webhooks']
-)
-api.include_router(
     endpoints.settings.router,
     prefix='/settings',
     tags=['settings']
@@ -95,12 +99,18 @@ init()
 
 scheduler = BackgroundScheduler()
 job_run = scheduler.add_job(
-    schedules.run, trigger='interval', minutes=1
+    schedules.scheduled_run, trigger='interval', minutes=1
 )
 job_offsets = scheduler.add_job(
-    schedules.reset_offsets, trigger='cron', hour=4
+    schedules.scheduled_daily_cleanup, trigger='cron', hour=4
 )
 scheduler.start()
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8080, log_level="debug")
+    uvicorn.run(
+        "app.main:app",
+        host="0.0.0.0",
+        port=8080,
+        log_level="debug",
+        reload=True
+    )
