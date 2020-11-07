@@ -47,7 +47,7 @@ class CRUDLight(CRUDBase[Light, LightCreate, LightUpdate]):
         *,
         light: Light
     ) -> Light:
-        hue = api.get(f'/lights/{light.id}').json()
+        hue = api.get(f'/lights/{light.id}')
         hue_state = hue.get('state')
 
         light.smart_off_on = hue_state.get('on', null())

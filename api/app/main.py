@@ -1,6 +1,6 @@
 import logging
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.logger import logger as fastapi_logger
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -18,6 +18,8 @@ uvicorn_access_logger = logging.getLogger("uvicorn.access")
 uvicorn_access_logger.handlers = gunicorn_error_logger.handlers
 
 fastapi_logger.handlers = gunicorn_error_logger.handlers
+logging.root.handlers.extend(gunicorn_error_logger.handlers)
+logging.root.setLevel(gunicorn_error_logger.level)
 
 if __name__ != "__main__":
     fastapi_logger.setLevel(gunicorn_logger.level)
@@ -27,7 +29,11 @@ else:
 
 @app.on_event('startup')
 def startup_event():
-    schedules.reset_smart_off()
+    try:
+        schedules.reset_smart_off()
+        schedules.scheduled_sync()
+    except HTTPException as e:
+        fastapi_logger.warn(e)
 
 
 app.add_middleware(
@@ -98,9 +104,9 @@ job_run = scheduler.add_job(
     schedules.scheduled_run, trigger='interval', minutes=1
 )
 job_offsets = scheduler.add_job(
-    schedules.reset_offsets, trigger='cron', hour=4
+    schedules.scheduled_daily_cleanup, trigger='cron', hour=4
 )
-# scheduler.start()
+scheduler.start()
 
 if __name__ == "__main__":
     uvicorn.run(

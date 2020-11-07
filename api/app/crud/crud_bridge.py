@@ -1,6 +1,6 @@
 from typing import Optional
 from sqlalchemy.orm import Session
-from app.api import ServerSession
+from app.api import ServerSession, api_from_bridge
 import logging
 import requests
 import time
@@ -24,7 +24,6 @@ class CRUDBridge(CRUDBase[Bridge, BridgeCreate, BridgeUpdate]):
     def create(
         self,
         db: Session,
-        api: ServerSession,
         *,
         bridge_in: BridgeCreate
     ) -> BridgeSync:
@@ -64,12 +63,14 @@ class CRUDBridge(CRUDBase[Bridge, BridgeCreate, BridgeUpdate]):
             db.delete(bridge)
         db.commit()
 
+        api = api_from_bridge(new_bridge)
+
         return self.sync(db, api)
 
     def sync(self, db: Session, api: ServerSession):
 
-        hue_lights = api.get('/lights').json()
-        hue_groups = api.get('/groups').json()
+        hue_lights = api.get('/lights')
+        hue_groups = api.get('/groups')
 
         lights = {light.id: light for light in crud_light.get_multi(db)}
         groups = {groups.id: groups for groups in crud_group.get_multi(db)}
@@ -84,7 +85,8 @@ class CRUDBridge(CRUDBase[Bridge, BridgeCreate, BridgeUpdate]):
                     'type': hue_light.get('type'),
                     'modelid': hue_light.get('modelid'),
                     'manufacturername': hue_light.get('manufacturername'),
-                    'productname': hue_light.get('productname')
+                    'productname': hue_light.get('productname'),
+                    'on': False
                 })
             else:
                 light = crud_light.update(db, api, light=light, light_in={
@@ -110,8 +112,8 @@ class CRUDBridge(CRUDBase[Bridge, BridgeCreate, BridgeUpdate]):
                     'lights': (
                         [crud_light.get(db, id=int(id))
                             for id in hue_group['lights']]
-                    )
-                })
+                    )}
+                )
             else:
                 group = crud_group.update(db, db_obj=group, obj_in={
                     'name': hue_group.get('name'),
@@ -119,8 +121,8 @@ class CRUDBridge(CRUDBase[Bridge, BridgeCreate, BridgeUpdate]):
                     'lights': (
                         [crud_light.get(db, id=int(id))
                             for id in hue_group['lights']]
-                    )
-                })
+                    )}
+                )
 
         for group_id, group in groups.items():
             if str(group_id) not in hue_groups:

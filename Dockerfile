@@ -1,16 +1,14 @@
-FROM python:3.8-alpine
+FROM tiangolo/uvicorn-gunicorn-fastapi:python3.8-alpine3.10
 
-COPY ./api/requirements.txt /opt/api/requirements.txt
-WORKDIR /opt/api
+COPY ./api/requirements.txt /app/requirements.txt
+WORKDIR /app/
 
 RUN apk add --no-cache --virtual .build-deps gcc libc-dev make \
     && pip install --no-cache-dir -r requirements.txt \
     && apk del .build-deps gcc libc-dev make \
     && apk add tzdata curl
 
-EXPOSE 8080
-
-COPY ./api /opt/api
+COPY ./api /app
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -28,5 +26,5 @@ LABEL maintainer="LukasPatzke" \
 HEALTHCHECK --timeout=3s --interval=10s \
   CMD curl -s -f http://localhost:8080/api/status/ || exit 1
 
-ENV PYTHONPATH=/opt/api
-ENTRYPOINT ["entrypoint.sh"]
+ENV PYTHONPATH=/app
+ENV GUNICORN_CMD_ARGS="--preload"

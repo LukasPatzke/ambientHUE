@@ -141,6 +141,12 @@ class LightBase(BaseModel):
 
 
 class LightUpdate(BaseModel):
+    id: Optional[int]
+    name: Optional[str]
+    type: Optional[str]
+    modelid: Optional[str]
+    manufacturername: Optional[str]
+    productname: Optional[str]
     on: Optional[bool]
     on_controlled: Optional[bool]
     on_threshold: Optional[float]
@@ -151,7 +157,7 @@ class LightUpdate(BaseModel):
     ct_curve_id: Optional[int]
 
 
-class LightCreate(LightUpdate):
+class LightCreate(LightBase):
     pass
 
 
@@ -174,16 +180,15 @@ class Light(LightBase):
 
 
 class GroubBase(BaseModel):
-    id: int
     name: str
     type: str
 
 
 class GroupCreate(GroubBase):
-    lights: Optional[List[LightInfo]]
+    id: int
 
 
-class GroupUpdate(GroupCreate):
+class GroupUpdate(GroubBase):
     pass
 
 

@@ -14,26 +14,39 @@ class ServerSession(requests.Session):
 
     def request(self, method, url, *args, **kwargs):
         url = urljoin(self.prefix_url, url.lstrip('/'))
-        return super().request(method, url, *args, **kwargs)
+        response = super().request(method, url, *args, **kwargs)
+        content = response.json()
+        try:
+            if content[0].get('error'):
+                raise HTTPException(
+                    status_code=500,
+                    detail=content[0].get('error').get('description')
+                )
+        except KeyError:
+            pass
+
+        return content
+
+
+hue_session = ServerSession()
 
 
 # Dependecy
 def get_api(
     db: Session = Depends(get_db)
 ):
-    try:
-        bridge = crud.bridge.get(db)
+    bridge = crud.bridge.get(db)
 
-        if bridge is None:
-            raise HTTPException(
-                status_code=404,
-                detail='Hue Bridge is not configured'
-            )
+    if bridge is None:
+        raise HTTPException(
+            status_code=401,
+            detail='Hue Bridge is not configured'
+        )
 
-        url = f'http://{bridge.ipaddress}/api/{bridge.username}/'
+    return api_from_bridge(bridge)
 
-        session = ServerSession(prefix_url=url)
 
-        yield session
-    finally:
-        session.close()
+def api_from_bridge(bridge):
+    url = f'http://{bridge.ipaddress}/api/{bridge.username}/'
+    hue_session.prefix_url = url
+    return hue_session

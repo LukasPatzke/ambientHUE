@@ -1,3 +1,4 @@
+from fastapi import HTTPException
 from app import models, crud
 from app.database import SessionLocal
 from app.api import get_api
@@ -82,7 +83,7 @@ def run(disable=False, lights=None, db=None, api=None):
     if status.status:
         settings = crud.settings.get(db)
 
-        hue_prev = api.get('/lights').json()
+        hue_prev = api.get('/lights')
 
         if not lights:
             lights = crud.light.get_multi(db)
@@ -116,7 +117,7 @@ def run(disable=False, lights=None, db=None, api=None):
                     f'/lights/{light.id}/state',
                     json=body
                 )
-                log.debug('response: %s', response.json())
+                log.debug('response: %s', response)
                 if settings.smart_off:
                     crud.light.reset_smart_off(db, api, light=light)
                     # db.commit()
@@ -132,14 +133,22 @@ def run(disable=False, lights=None, db=None, api=None):
                     f'/lights/{light.id}/state',
                     json={'on': False}
                 )
-                log.debug(response.json())
+                log.debug(response)
     crud.curve.calc_value.cache_clear()
 
 
 def scheduled_run():
-    db = SessionLocal()
-    api = next(get_api(db))
-    run(db=db, api=api)
+    try:
+        db = SessionLocal()
+        api = get_api(db)
+        run(db=db, api=api)
+    except HTTPException as e:
+        log.error(e.detail)
+
+
+def scheduled_daily_cleanup():
+    reset_offsets()
+    reset_smart_off()
 
 
 def reset_offsets():
@@ -147,23 +156,37 @@ def reset_offsets():
 
     curves = crud.curve.get_multi(db)
     for curve in curves:
-        crud.curve.update(db, db_obj=curve, obj_in={
-            'offset': 0
-        })
+        try:
+            crud.curve.update(db, db_obj=curve, obj_in={
+                'offset': 0
+            })
+        except HTTPException as e:
+            log.error(e.detail)
     log.info('Reset offset for %s curves', len(curves))
-
-    reset_smart_off()
+    db.close()
 
 
 def reset_smart_off():
     db = SessionLocal()
-    api = next(get_api(db))
+    api = get_api(db)
     lights = crud.light.get_multi(db)
     for light in lights:
-        crud.light.reset_smart_off(db, api, light=light)
+        try:
+            crud.light.reset_smart_off(db, api, light=light)
+        except HTTPException as e:
+            log.error(e.detail)
     db.commit()
     log.info('Reset smart off for %s lights', len(lights))
     db.close()
+
+
+def scheduled_sync():
+    try:
+        db = SessionLocal()
+        api = get_api(db)
+        log.info(crud.bridge.sync(db, api))
+    except HTTPException as e:
+        log.error(e.detail)
 
 
 if __name__ == '__main__':

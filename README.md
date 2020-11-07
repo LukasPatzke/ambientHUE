@@ -29,13 +29,13 @@ ambientHUE does not modify anything in your Hue bridge.
 The simplest way to run ambientHUE is using the Docker image. 
 > **_NOTE:_**  Pay attention to use the correct timezone settings for your location!
 ```
-docker run --name ambientHue -p 8080:8080 -e "TZ=Europe/Berlin" lukaspatzke/ambienthue
+docker run --name ambientHue -p 8080:80 -e "TZ=Europe/Berlin" lukaspatzke/ambienthue
 ```
 
 To make your settings persist use a docker volume:
 ```
 docker volume create --name ambienthue-data
-docker run --name ambientHue -p 8080:8080 -v "ambienthue-data:/data" \
+docker run --name ambientHue -p 8080:80 -v "ambienthue-data:/data" \
     -e "DB_CONN=sqlite:////data/db.sqlite" \
     -e "TZ=Europe/Berlin" --restart always lukaspatzke/ambienthue
 ```
@@ -52,7 +52,7 @@ services:
         restart: always
         container_name: ambient-hue
         ports:
-            - 8080:8080
+            - 8080:80
         volumes:
             - data:/data
         environment:
