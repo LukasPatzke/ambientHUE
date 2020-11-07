@@ -1,4 +1,4 @@
-FROM tiangolo/uvicorn-gunicorn-fastapi:python3.8-alpine3.10
+FROM python:3.8-alpine3.10
 
 COPY ./api/requirements.txt /app/requirements.txt
 WORKDIR /app/
@@ -8,6 +8,10 @@ RUN apk add --no-cache --virtual .build-deps gcc libc-dev make \
     && apk del .build-deps gcc libc-dev make \
     && apk add tzdata curl
 
+COPY ./start.sh /start.sh
+RUN chmod +x /start.sh
+
+COPY ./gunicorn_conf.py /gunicorn_conf.py
 COPY ./api /app
 
 ARG BUILD_DATE
@@ -24,7 +28,12 @@ LABEL maintainer="LukasPatzke" \
   org.opencontainers.image.licenses="MIT"
 
 HEALTHCHECK --timeout=3s --interval=10s \
-  CMD curl -s -f http://localhost:8080/api/status/ || exit 1
+  CMD curl -s -f http://localhost/api/status/ || exit 1
+
+EXPOSE 80
 
 ENV PYTHONPATH=/app
-ENV GUNICORN_CMD_ARGS="--preload"
+
+# Run the start script, it will check for an /app/prestart.sh script (e.g. for migrations)
+# And then will start Gunicorn with Uvicorn
+CMD ["/start.sh"]

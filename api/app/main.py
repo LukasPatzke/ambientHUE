@@ -14,8 +14,6 @@ app = FastAPI()
 
 gunicorn_error_logger = logging.getLogger("gunicorn.error")
 gunicorn_logger = logging.getLogger("gunicorn")
-uvicorn_access_logger = logging.getLogger("uvicorn.access")
-uvicorn_access_logger.handlers = gunicorn_error_logger.handlers
 
 fastapi_logger.handlers = gunicorn_error_logger.handlers
 logging.root.handlers.extend(gunicorn_error_logger.handlers)
