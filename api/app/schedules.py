@@ -26,27 +26,6 @@ def calc_color_temp(db: Session, light: models.Light):
     return crud.curve.calc_value(db=db, curve=curve)
 
 
-def get_smart_off(light, prev_light_state):
-    """ Calculate the smart of state. """
-    smart_off_on = (
-        (light.smart_off_on is not None) and
-        (light.smart_off_on != prev_light_state.get('on'))
-    )
-    smart_off_bri = (
-        (light.smart_off_bri is not None) and
-        (light.smart_off_bri != prev_light_state.get('bri'))
-    )
-    if prev_light_state.get('ct') is None:
-        smart_off_ct = None
-    else:
-        smart_off_ct = (
-            (light.smart_off_ct is not None) and
-            (light.smart_off_ct != prev_light_state.get('ct'))
-        )
-
-    return smart_off_on or smart_off_bri or smart_off_ct
-
-
 def get_request_body(db, light, prev_light_state):
     """ Build the request body for the hue api."""
     body = {}

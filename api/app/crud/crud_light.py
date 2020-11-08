@@ -46,24 +46,27 @@ class CRUDLight(CRUDBase[Light, LightCreate, LightUpdate]):
         prev_light_state
     ):
         """ Calculate the smart of state. """
-        smart_off_on = (
-            (light.smart_off_on is not None) and
-            (light.smart_off_on != prev_light_state.get('on'))
-        )
-        if prev_light_state.get('bri') is None:
-            smart_off_bri = False
+        if light.on_controlled:
+            smart_off_on = (
+                (light.smart_off_on is not None) and
+                (light.smart_off_on != prev_light_state.get('on'))
+            )
         else:
+            smart_off_on = False
+        if light.bri_controlled:
             smart_off_bri = (
                 (light.smart_off_bri is not None) and
                 (light.smart_off_bri != prev_light_state.get('bri'))
             )
-        if prev_light_state.get('ct') is None:
-            smart_off_ct = False
         else:
+            smart_off_bri = False
+        if light.ct_controlled:
             smart_off_ct = (
                 (light.smart_off_ct is not None) and
                 (light.smart_off_ct != prev_light_state.get('ct'))
             )
+        else:
+            smart_off_ct = False
 
         active = smart_off_on or smart_off_bri or smart_off_ct
         light.smart_off_active = active
