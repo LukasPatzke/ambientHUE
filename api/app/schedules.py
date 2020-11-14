@@ -48,9 +48,14 @@ def get_request_body(db, light, prev_light_state):
     if body.get('on') is False:
         return {'on': False}
 
+    # Do not send a request if the light stays off
+    if (prev_light_state.get('on') is False) and not body.get('on'):
+        body = {}
+
     # Signify recommends to not resent the 'on' value
     if body.get('on') == prev_light_state.get('on'):
         del body['on']
+
     log.debug('body: %s', body)
     return body
 
