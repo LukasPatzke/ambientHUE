@@ -10,6 +10,7 @@ import { LightList } from '../components/LightList';
 import { get, put } from '../components/useApi';
 import { RefresherEventDetail } from '@ionic/core';
 import { LightCurveSettings } from 'src/components/LightCurveSettings';
+import { lightReducer } from 'src/utils';
 
 interface IPageGroupDetail extends RouteComponentProps<{
   id: string;
@@ -39,6 +40,7 @@ const PageGroupDetail : React.FC<IPageGroupDetail> = ({match}) => {
   if (!group) {
     return null;
   } else {
+    const light = group.lights.reduce(lightReducer)
     return (
       <IonPage ref={pageRef}>
         <IonHeader translucent>
@@ -69,11 +71,11 @@ const PageGroupDetail : React.FC<IPageGroupDetail> = ({match}) => {
             <ListHeader inset>
               <IonLabel>{t('lights:settings.title')}</IonLabel>
             </ListHeader>
-            <LightSettings light={group.lights[0]} onChange={handleChange}/>
+            <LightSettings light={light} onChange={handleChange}/>
             <ListHeader inset>
               <IonLabel>{t('curves:title')}</IonLabel>
             </ListHeader>
-            <LightCurveSettings light={group.lights[0]} onChange={handleChange} pageRef={pageRef.current}/>
+            <LightCurveSettings light={light} onChange={handleChange} pageRef={pageRef.current}/>
           </IonGrid>
         </IonContent>
       </IonPage>

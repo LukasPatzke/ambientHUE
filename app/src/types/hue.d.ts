@@ -34,6 +34,7 @@ interface ILightBase {
   manufacturername: string;
   productname: string;
   on: boolean
+  smart_off_active: boolean
 }
 export interface ILight extends ILightBase {
   on_controlled: boolean

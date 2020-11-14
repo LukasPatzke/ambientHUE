@@ -40,6 +40,38 @@ class CRUDLight(CRUDBase[Light, LightCreate, LightUpdate]):
             light = self.reset_smart_off(db, api, light=light)
         return light
 
+    def get_smart_off(
+        self,
+        light: Light,
+        prev_light_state
+    ):
+        """ Calculate the smart of state. """
+        if light.on_controlled:
+            smart_off_on = (
+                (light.smart_off_on is not None) and
+                (light.smart_off_on != prev_light_state.get('on'))
+            )
+        else:
+            smart_off_on = False
+        if light.bri_controlled:
+            smart_off_bri = (
+                (light.smart_off_bri is not None) and
+                (light.smart_off_bri != prev_light_state.get('bri'))
+            )
+        else:
+            smart_off_bri = False
+        if light.ct_controlled:
+            smart_off_ct = (
+                (light.smart_off_ct is not None) and
+                (light.smart_off_ct != prev_light_state.get('ct'))
+            )
+        else:
+            smart_off_ct = False
+
+        active = smart_off_on or smart_off_bri or smart_off_ct
+        light.smart_off_active = active
+        return light
+
     def reset_smart_off(
         self,
         db: Session,
@@ -53,6 +85,7 @@ class CRUDLight(CRUDBase[Light, LightCreate, LightUpdate]):
         light.smart_off_on = hue_state.get('on', null())
         light.smart_off_bri = hue_state.get('bri', null())
         light.smart_off_ct = hue_state.get('ct', null())
+        light.smart_off_active = False
 
         return light
 

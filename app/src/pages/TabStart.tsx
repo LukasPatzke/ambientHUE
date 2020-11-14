@@ -5,10 +5,11 @@ import { IPosition, ILightInfo, IGroupInfo } from 'src/types/hue';
 import { get, put } from '../components/useApi';
 import appIcon from '../icons/icon.svg'
 import appIconColor from '../icons/icon-color.svg'
-import { grid, addCircle, removeCircle } from 'ionicons/icons';
+import { grid, addCircle, removeCircle, colorWand } from 'ionicons/icons';
 import { useTranslation } from 'react-i18next';
 import { ListHeader } from 'src/components/ListHeader';
 import { ItemIcon } from 'src/components/LightList';
+import { lightInfoReducer } from 'src/utils';
 
 const TabStart: React.FC = () => {
   const pageRef = useRef();
@@ -84,6 +85,7 @@ const TabStart: React.FC = () => {
             state={pos.light.on}
             onClick={()=>pos.light?handleLightClick(pos.light):undefined}
             disabled={!active}
+            smartOff={pos.light.smart_off_active}
           />
         )
       } else if (pos.group) {
@@ -93,9 +95,10 @@ const TabStart: React.FC = () => {
             item={pos.group}
             icon={grid}
             label={pos.group.name}
-            state={pos.group.lights[0]?.on}
+            state={pos.group.lights.reduce(lightInfoReducer).on}
             onClick={()=>pos.group?handleGroupClick(pos.group):undefined}
             disabled={!active}
+            smartOff={pos.group.lights.reduce(lightInfoReducer).smart_off_active}
           />
         )
       } else { 
@@ -175,9 +178,10 @@ interface ITile {
   size?: 'small'|'large'
   style?: React.CSSProperties
   disabled?: boolean
+  smartOff?: Boolean
 }
 
-export const Tile: React.FC<ITile> = ({icon, item, label, state, onClick, routerLink, size='small', style, disabled}) => {
+export const Tile: React.FC<ITile> = ({icon, item, label, state, onClick, routerLink, size='small', style, disabled, smartOff}) => {
   const colSize = size==='large'?'12':'auto';
   const { t } = useTranslation('common')
   return (
@@ -197,9 +201,20 @@ export const Tile: React.FC<ITile> = ({icon, item, label, state, onClick, router
             <ItemIcon item={item} disabled={!state}/>:
             <IonIcon icon={icon} color={state?'primary':undefined}/>}
           </div>
+          {smartOff && state?
+            <IonIcon className='lp-tile-smart-off-icon' icon={colorWand} color='primary'/>:undefined
+          }
           <div className='lp-tile-text'>
             <div className='lp-tile-label'><IonLabel color={state?'dark':undefined}>{label}</IonLabel></div>
-            <div className='lp-tile-state'><IonLabel>{state?t('settings.on'):t('settings.off')}</IonLabel></div>
+            <div className='lp-tile-state'>
+              <IonLabel>
+                {state?
+                  smartOff?t('settings.smart_off')
+                  :t('settings.on')
+                  :t('settings.off')
+                }
+              </IonLabel>
+            </div>
           </div>
         </IonCardContent>
       </IonCard>

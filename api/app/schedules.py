@@ -26,27 +26,6 @@ def calc_color_temp(db: Session, light: models.Light):
     return crud.curve.calc_value(db=db, curve=curve)
 
 
-def get_smart_off(light, prev_light_state):
-    """ Calculate the smart of state. """
-    smart_off_on = (
-        (light.smart_off_on is not None) and
-        (light.smart_off_on != prev_light_state.get('on'))
-    )
-    smart_off_bri = (
-        (light.smart_off_bri is not None) and
-        (light.smart_off_bri != prev_light_state.get('bri'))
-    )
-    if prev_light_state.get('ct') is None:
-        smart_off_ct = None
-    else:
-        smart_off_ct = (
-            (light.smart_off_ct is not None) and
-            (light.smart_off_ct != prev_light_state.get('ct'))
-        )
-
-    return smart_off_on or smart_off_bri or smart_off_ct
-
-
 def get_request_body(db, light, prev_light_state):
     """ Build the request body for the hue api."""
     body = {}
@@ -69,9 +48,14 @@ def get_request_body(db, light, prev_light_state):
     if body.get('on') is False:
         return {'on': False}
 
+    # Do not send a request if the light stays off
+    if (prev_light_state.get('on') is False) and not body.get('on'):
+        body = {}
+
     # Signify recommends to not resent the 'on' value
     if body.get('on') == prev_light_state.get('on'):
         del body['on']
+
     log.debug('body: %s', body)
     return body
 
@@ -92,9 +76,9 @@ def run(disable=False, lights=None, db=None, api=None):
             prev_light_state = hue_prev.get(str(light.id)).get('state')
 
             if settings.smart_off:
-                smart_off = get_smart_off(light, prev_light_state)
+                light = crud.light.get_smart_off(light, prev_light_state)
 
-                if smart_off:
+                if light.smart_off_active:
                     log.debug(
                         'skipping request, Smart Off for light %s',
                         light.id
@@ -135,6 +119,7 @@ def run(disable=False, lights=None, db=None, api=None):
                 )
                 log.debug(response)
     crud.curve.calc_value.cache_clear()
+    db.commit()
 
 
 def scheduled_run():

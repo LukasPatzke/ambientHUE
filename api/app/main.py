@@ -30,6 +30,7 @@ def startup_event():
     try:
         schedules.reset_smart_off()
         schedules.scheduled_sync()
+        schedules.scheduled_run()
     except HTTPException as e:
         fastapi_logger.warn(e)
 
