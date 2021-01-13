@@ -14,7 +14,14 @@ class ServerSession(requests.Session):
 
     def request(self, method, url, *args, **kwargs):
         url = urljoin(self.prefix_url, url.lstrip('/'))
-        response = super().request(method, url, *args, **kwargs)
+        try:
+            response = super().request(method, url, *args, **kwargs)
+        except requests.ConnectionError as e:
+            raise HTTPException(
+                status_code=500,
+                detail=e
+            )
+
         content = response.json()
         try:
             if content[0].get('error'):
