@@ -26,7 +26,7 @@ async def create_curve(
     curve_in: schemas.CurveCreate,
     db: Session = Depends(get_db)
 ) -> Any:
-    return crud.curve.create(db, obj_in=curve_in)
+    return crud.curve.create(db, curve_in=curve_in)
 
 
 @router.get('/{id}', response_model=schemas.Curve)
