@@ -13,8 +13,13 @@ log = logging.getLogger(__name__)
 
 class CRUDWebhook(CRUDBase[Webhook, WebhookCreate, WebhookUpdate]):
     def create(self, db: Session, *, obj_in: WebhookCreate) -> Webhook:
-        obj_in_data = jsonable_encoder(obj_in)
-        db_obj = self.model(**obj_in_data)  # type: ignore
+        db_obj = self.model(
+            on=obj_in.on,
+            name=obj_in.name,
+            url=obj_in.url,
+            method=obj_in.method,
+            body=obj_in.body
+        )  # type: ignore
 
         if obj_in.lights:
             db_obj.lights = db.query(Light).filter(
