@@ -101,19 +101,23 @@ class CRUDWebhook(CRUDBase[Webhook, WebhookCreate, WebhookUpdate]):
 
     def execute(self, webhook: Webhook, params: dict):
         """Execute a specific webhook"""
-        url = webhook.url.format(**params)
-        log.debug('execute webhook url %s', url)
 
-        try:
-            if webhook.method == 'GET':
-                return requests.get(url=url)
-            elif webhook.method == 'POST':
-                body = webhook.body.format(**params)
-                return requests.post(url=url, json=body)
-            else:
-                return None
-        except requests.exceptions.ConnectionError as e:
-            log.warning('webhook failed %s', e)
+        if webhook.on:
+            url = webhook.url.format(**params)
+            log.debug('execute webhook url %s', url)
+
+            try:
+                if webhook.method == 'GET':
+                    return requests.get(url=url)
+                elif webhook.method == 'POST':
+                    body = webhook.body.format(**params)
+                    return requests.post(url=url, json=body)
+                else:
+                    return None
+            except requests.exceptions.ConnectionError as e:
+                log.warning('webhook failed %s', e)
+        else:
+            log.info('webhook %s off', webhook.id)
 
 
 webhook = CRUDWebhook(Webhook)
