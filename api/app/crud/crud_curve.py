@@ -1,7 +1,6 @@
 from typing import List, Optional
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
-from fastapi.encoders import jsonable_encoder
 import datetime as dt
 from functools import lru_cache
 
@@ -36,8 +35,12 @@ class CRUDCurve(CRUDBase[Curve, schemas.CurveCreate, schemas.CurveUpdate]):
         *,
         curve_in: schemas.CurveCreate
     ) -> Curve:
-        obj_in_data = jsonable_encoder(curve_in)
-        db_obj = self.model(**obj_in_data, default=False)  # type: ignore
+        curve = self.model(
+            name=curve_in.name,
+            kind=curve_in.kind,
+            offset=curve_in.offset,
+            default=False
+        )  # type: ignore
 
         Point(x=0, y=200, first=True, curve=curve)
         Point(x=1440, y=200, last=True, curve=curve)
@@ -45,13 +48,13 @@ class CRUDCurve(CRUDBase[Curve, schemas.CurveCreate, schemas.CurveUpdate]):
             Point(
                 x=1440/(curve_in.count - 1) * index,
                 y=200,
-                curve=db_obj
+                curve=curve
             )
 
-        db.add(db_obj)
+        db.add(curve)
         db.commit()
-        db.refresh(db_obj)
-        return db_obj
+        db.refresh(curve)
+        return curve
 
     def remove(self, db: Session, *, id: int) -> Curve:
         obj = db.query(self.model).get(id)

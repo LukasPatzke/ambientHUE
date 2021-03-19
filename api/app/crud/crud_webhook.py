@@ -13,8 +13,13 @@ log = logging.getLogger(__name__)
 
 class CRUDWebhook(CRUDBase[Webhook, WebhookCreate, WebhookUpdate]):
     def create(self, db: Session, *, obj_in: WebhookCreate) -> Webhook:
-        obj_in_data = jsonable_encoder(obj_in)
-        db_obj = self.model(**obj_in_data)  # type: ignore
+        db_obj = self.model(
+            on=obj_in.on,
+            name=obj_in.name,
+            url=obj_in.url,
+            method=obj_in.method,
+            body=obj_in.body
+        )  # type: ignore
 
         if obj_in.lights:
             db_obj.lights = db.query(Light).filter(
@@ -96,19 +101,23 @@ class CRUDWebhook(CRUDBase[Webhook, WebhookCreate, WebhookUpdate]):
 
     def execute(self, webhook: Webhook, params: dict):
         """Execute a specific webhook"""
-        url = webhook.url.format(**params)
-        log.debug('execute webhook url %s', url)
 
-        try:
-            if webhook.method == 'GET':
-                return requests.get(url=url)
-            elif webhook.method == 'POST':
-                body = webhook.body.format(**params)
-                return requests.post(url=url, json=body)
-            else:
-                return None
-        except requests.exceptions.ConnectionError as e:
-            log.warning('webhook failed %s', e)
+        if webhook.on:
+            url = webhook.url.format(**params)
+            log.debug('execute webhook url %s', url)
+
+            try:
+                if webhook.method == 'GET':
+                    return requests.get(url=url)
+                elif webhook.method == 'POST':
+                    body = webhook.body.format(**params)
+                    return requests.post(url=url, json=body)
+                else:
+                    return None
+            except requests.exceptions.ConnectionError as e:
+                log.warning('webhook failed %s', e)
+        else:
+            log.info('webhook %s off', webhook.id)
 
 
 webhook = CRUDWebhook(Webhook)
